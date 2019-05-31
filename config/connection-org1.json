@@ -1,0 +1,54 @@
+{
+    "name": "demo-network-org1",
+    "version": "1.0.0",
+    "client": {
+        "organization": "Org1",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "organizations": {
+        "Org1": {
+            "mspid": "Org1MSP",
+            "peers": [
+                "peer0.org1.india.com"
+            ],
+            "certificateAuthorities": [
+                "ca.org1.india.com"
+            ]
+        }
+    },
+    "peers": {
+        "peer0.org1.india.com": {
+            "url": "grpcs://localhost:7051",
+            "tlsCACerts": {
+                "path": "../demo-network/crypto-config/peerOrganizations/org1.india.com/tlsca/tlsca.org1.india.com-cert.pem"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.org1.india.com"
+            }
+        }
+    },
+    "certificateAuthorities": {
+        "ca.org1.india.com": {
+            "url": "https://localhost:7054",
+            "caName": "ca.org1.india.com",
+            "tlsCACerts": {
+                "path": "../demo-network/crypto-config/peerOrganizations/org1.india.com/ca/ca.org1.india.com-cert.pem"
+            },
+            "httpOptions": {
+                "verify": false
+            },
+            "registrar": [
+                {
+                    "enrollId": "admin",
+                    "enrollSecret": "adminpw"
+                }
+            ]
+        }
+    }
+}
