@@ -1,5 +1,5 @@
 {
-    "name": "demo-network-org1",
+    "name": "mtest-network",
     "version": "1.0.0",
     "client": {
         "organization": "Org1",
@@ -7,6 +7,22 @@
             "timeout": {
                 "peer": {
                     "endorser": "300"
+                },
+                "orderer": "300"
+            }
+        }
+    },
+    "channels": {
+        "mychannel": {
+            "orderers": [
+                "orderer.example.com"
+            ],
+            "peers": {
+                "peer0.org1.example.com": {
+                    "endorsingPeer": true,
+                    "chaincodeQuery": true,
+                    "ledgerQuery": true,
+                    "eventSource": true
                 }
             }
         }
@@ -15,33 +31,52 @@
         "Org1": {
             "mspid": "Org1MSP",
             "peers": [
-                "peer0.org1.india.com"
+                "peer0.org1.example.com"
             ],
             "certificateAuthorities": [
-                "ca.org1.india.com"
-            ]
+                "ca.example.com"
+            ],
+            "adminPrivateKey": {
+                "path": "../demoexpress/demo-network/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/52a7eb5c4847ba7e88cb94a1119442c1468f6332cb6a7c8ad99983096e10766b_sk"
+            },
+            "signedCert": {
+                "path": "../demoexpress/demo-network/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem"
+            }
+        }
+    },
+    "orderers": {
+        "orderer.example.com": {
+            "url": "grpcs://localhost:7050",
+            "grpcOptions": {
+                "ssl-target-name-override": "orderer.example.com",
+                "grpc.keepalive_timeout_ms": 15
+            },
+            "tlsCACerts": {
+                "path": "../demo-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
+            }
         }
     },
     "peers": {
-        "peer0.org1.india.com": {
+        "peer0.org1.example.com": {
             "url": "grpcs://localhost:7051",
             "tlsCACerts": {
-                "path": "../demo-network/crypto-config/peerOrganizations/org1.india.com/tlsca/tlsca.org1.india.com-cert.pem"
+                "path": "../demo-network/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem"
             },
             "grpcOptions": {
-                "ssl-target-name-override": "peer0.org1.india.com"
+                "ssl-target-name-override": "peer0.org1.example.com",
+                "grpc.keepalive_timeout_ms": 20000
             }
         }
     },
     "certificateAuthorities": {
-        "ca.org1.india.com": {
-            "url": "https://localhost:7054",
-            "caName": "ca.org1.india.com",
-            "tlsCACerts": {
-                "path": "../demo-network/crypto-config/peerOrganizations/org1.india.com/ca/ca.org1.india.com-cert.pem"
-            },
+        "ca.example.com": {
+            "url": "http://localhost:7054",
+            "caName": "ca.example.com",
             "httpOptions": {
                 "verify": false
+            },
+            "tlsCACerts": {
+                "path": "../demo-network/crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem"
             },
             "registrar": [
                 {

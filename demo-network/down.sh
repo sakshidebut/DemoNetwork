@@ -13,4 +13,4 @@ docker network prune
 #rm -rf crypto-config/
 
 #Remove channel artifacts
-rm -rf channel-artifacts/*
+#rm -rf channel-artifacts/*
