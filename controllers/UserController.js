@@ -117,14 +117,12 @@ class UserController {
             await gateway.disconnect();
             return {
                 status: 200,
-                data: JSON.parse(result.toString())
+                data: {
+                    data: JSON.parse(result.toString())
+                }
             };
-
         } catch (error) {
-            return {
-                status: 500,
-                data: error.endorsements[0].message
-            };
+            return this.handleError(error)
         }
     }
 
@@ -156,14 +154,12 @@ class UserController {
             await gateway.disconnect();
             return {
                 status: 200,
-                data: JSON.parse(result.toString())
+                data: {
+                    data: JSON.parse(result.toString())
+                }
             };
-
         } catch (error) {
-            return {
-                status: 500,
-                data: error.endorsements[0].message
-            };
+            return this.handleError(error)
         }
     }
 
@@ -193,13 +189,14 @@ class UserController {
             result = await contract.submitTransaction('getUsers', data.id);
             // Disconnect from the gateway.
             await gateway.disconnect();
-            return result;
-
-        } catch (error) {
             return {
-                status: 500,
-                data: error.endorsements[0].message
+                status: 200,
+                data: {
+                    data: JSON.parse(result.toString())
+                }
             };
+        } catch (error) {
+            return this.handleError(error)
         }
     }
 
@@ -231,14 +228,14 @@ class UserController {
             await gateway.disconnect();
             return {
                 status: 200,
-                data: JSON.parse(result.toString())
+                data: {
+                    data: {
+                        message: 'Asset has been saved successfully.'
+                    }
+                }
             };
-
         } catch (error) {
-            return {
-                status: 500,
-                data: error.endorsements[0].message
-            };
+            return this.handleError(error)
         }
     }
 
@@ -270,14 +267,13 @@ class UserController {
             await gateway.disconnect();
             return {
                 status: 200,
-                data: JSON.parse(result.toString())
+                data: {
+                    data: JSON.parse(result.toString())
+                }
             };
 
         } catch (error) {
-            return {
-                status: 500,
-                data: error.endorsements[0].message
-            };
+            return this.handleError(error)
         }
     }
 
@@ -308,14 +304,70 @@ class UserController {
             // Disconnect from the gateway.
             await gateway.disconnect();
             return {
-                status: 200
+                status: 200,
+                data: {
+                    data: {
+                        message: "Assets has been trasnfered successfully!"
+                    }
+                }
             };
-
         } catch (error) {
-            return {
-                status: 500,
-                data: error.endorsements[0].message
-            };
+            return this.handleError(error)
+        }
+    }
+
+    /**
+     * Checks whether a string is JSON or not
+     * @param {*} item 
+     */
+    isJson(item) {
+        item = typeof item !== "string"
+            ? JSON.stringify(item)
+            : item;
+        try {
+            item = JSON.parse(item);
+        } catch (e) {
+            return false;
+        }
+        if (typeof item === "object" && item !== null) {
+            return item;
+        }
+        return false;
+    }
+
+    /**
+     * Handles the errors occured during invoke or query
+     * @param {*} error 
+     */
+    handleError(error) {
+        let response = {
+            status: 500,
+            data: {
+                message: error.message
+            }
+        };
+        // check for the chaincode response
+        if (error.hasOwnProperty('endorsements')) {
+            // chaincode is executed and has thrown some error
+            let endorsements = error.endorsements;
+            if (endorsements.length) {
+                // get the details of the error
+                let errors = this.isJson(endorsements[0].message);
+                if (errors) {
+                    // make the response
+                    response.data.message = errors.msg;
+                    response.status = errors.code;
+                }
+                else {
+                    response.data.message = endorsements[0].message;
+                }
+
+                // check if the error has extra data
+                if (errors.hasOwnProperty('details')) {
+                    response.data.errors = errors.details;
+                }
+            }
+            return response;
         }
     }
 }
