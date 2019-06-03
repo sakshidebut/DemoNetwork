@@ -14,6 +14,11 @@ import (
 	"github.com/s7techlab/cckit/router"
 )
 
+type ResponseAddAsset struct {
+	ID      string `json:"_id"`
+	Balance int64  `json:"balance"`
+}
+
 // CreateUser create the user
 func CreateUser(c router.Context) (interface{}, error) {
 	// get the data from the request and parse it as structure
@@ -34,9 +39,9 @@ func CreateUser(c router.Context) (interface{}, error) {
 
 	// check the user already exists or not
 	queryString := fmt.Sprintf("{\"selector\":{\"email\":\"%s\",\"doc_type\":\"%s\"}}", data.Email, utils.DocTypeUser)
-	alreadyExists, _, err := utils.Get(c, queryString, fmt.Sprintf("User already exists with email id %s!", data.Email))
+	alreadyExists, _, err := utils.Get(c, queryString, "")
 	if alreadyExists != nil {
-		return nil, err
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("User already exists with email id %s!", data.Email))
 	}
 
 	// get the stub to use it for query and save
@@ -231,9 +236,9 @@ func AddAsset(c router.Context) (interface{}, error) {
 
 	// check already exists
 	queryString := fmt.Sprintf("{\"selector\":{\"code\":\"%s\",\"doc_type\":\"%s\"}}", data.Code, utils.DocTypeAsset)
-	asset, _, err := utils.Get(c, queryString, fmt.Sprintf("Symbol %s already exists!", data.Code))
+	asset, _, err := utils.Get(c, queryString, "")
 	if asset != nil {
-		return nil, err
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("Symbol %s already exists!", data.Code))
 	}
 
 	stub := c.Stub()
@@ -253,7 +258,7 @@ func AddAsset(c router.Context) (interface{}, error) {
 	}
 
 	user.WalletBalance = user.WalletBalance - 5
-	responseBody := utils.ResponseID{ID: txID}
+	responseBody := ResponseAddAsset{ID: txID, Balance: user.WalletBalance}
 
 	// Save the data and return the response
 	return responseBody, c.State().Put(data.UserID, user)
