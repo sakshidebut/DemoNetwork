@@ -1,7 +1,7 @@
 const config = {
-    user: 'user2',
+    user: 'user1',
     channel: 'mychannel',
-    chaincode: 'fabcar'
+    chaincode: 'walletdemo'
 };
 
 module.exports = config;
