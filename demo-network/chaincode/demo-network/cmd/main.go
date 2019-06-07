@@ -43,8 +43,7 @@ func New() *Chaincode {
 
 	/***** users routes *****/
 
-	r.Invoke(`createUser`, users.CreateUser, param.Struct(`data`, &users.User{}))
-	r.Invoke(`getUser`, users.GetUser, param.Struct(`data`, &users.UserId{}))
+	r.Invoke(`getUser`, users.GetUser, param.Struct(`data`, &users.User{}))
 	r.Invoke(`getUsers`, users.GetUsers, param.Struct(`data`, &users.UserId{}))
 	r.Invoke(`getAssets`, users.GetAssets, param.Struct(`data`, &users.UserId{}))
 	r.Invoke(`addAsset`, users.AddAsset, param.Struct(`data`, &users.Asset{}))
@@ -62,6 +61,6 @@ func invokeInit(c router.Context) (interface{}, error) {
 // Execution start point
 func main() {
 	if err := shim.Start(New()); err != nil {
-		fmt.Printf("Error starting iFinca chaincode: %s", err)
+		fmt.Printf("Error starting Walletdemo chaincode: %s", err)
 	}
 }

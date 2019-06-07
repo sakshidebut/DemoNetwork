@@ -10,9 +10,6 @@ import (
 // Validate Validates the User Structure
 func (data User) Validate() error {
 	return validation.ValidateStruct(&data,
-		validation.Field(&data.Name, validation.Required.Error(utils.NameRequired), validation.NotNil.Error(utils.NameRequired)),
-		validation.Field(&data.Email, validation.Required.Error(utils.EmailRequired), validation.NotNil.Error(utils.EmailRequired)),
-		validation.Field(&data.Phone, validation.Required.Error(utils.PhoneRequired), validation.NotNil.Error(utils.PhoneRequired)),
 		validation.Field(&data.Address, validation.Required.Error(utils.AddressRequired), validation.NotNil.Error(utils.AddressRequired)),
 	)
 }

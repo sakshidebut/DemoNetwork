@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-
+	"time"
 	"github.com/chaincode/demo-network/pkg/core/status"
 	"github.com/chaincode/demo-network/pkg/core/utils"
 
@@ -14,14 +14,20 @@ import (
 	"github.com/s7techlab/cckit/router"
 )
 
-// CreateUser create the user
-func CreateUser(c router.Context) (interface{}, error) {
+type ResponseAddAsset struct {
+	ID      string `json:"_id"`
+	Balance int64  `json:"balance"`
+}
+
+// GetUser create the user
+func GetUser(c router.Context) (interface{}, error) {
 	// get the data from the request and parse it as structure
 	data := c.Param(`data`).(User)
 
 	// set the default values for the fields
 	data.DocType = utils.DocTypeUser
 	data.WalletBalance = 10000
+	data.CreatedAt = time.Now().Format(time.RFC3339)
 
 	// Validate the inputed data
 	err := data.Validate()
@@ -32,46 +38,25 @@ func CreateUser(c router.Context) (interface{}, error) {
 		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
 	}
 
-	// check the user already exists or not
-	queryString := fmt.Sprintf("{\"selector\":{\"email\":\"%s\",\"doc_type\":\"%s\"}}", data.Email, utils.DocTypeUser)
-	alreadyExists, _, err := utils.Get(c, queryString, fmt.Sprintf("User already exists with email id %s!", data.Email))
-	if alreadyExists != nil {
-		return nil, err
-	}
+	// check if address already exists or not
+	queryString := fmt.Sprintf("{\"selector\":{\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.Address, utils.DocTypeUser)
+	address, user_id, err := utils.Get(c, queryString, fmt.Sprintf("Address already exists with the given address %s!", data.Address))
+	
+	//If address not found
+	if address == nil {
+		// return nil, err
+		// get the stub to use it for query and save
+		stub := c.Stub()
 
-	// get the stub to use it for query and save
-	stub := c.Stub()
+		// prepare the response body
+		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance,CreatedAt: data.CreatedAt}
 
-	// prepare the response body
-	responseBody := UserResponse{ID: stub.GetTxID(), Name: data.Name, Email: data.Email, Phone: data.Phone, Address: data.Address, WalletBalance: data.WalletBalance}
-
-	// Save the data and return the response
-	return responseBody, c.State().Put(stub.GetTxID(), data)
-}
-
-// GetUser get the user
-func GetUser(c router.Context) (interface{}, error) {
-	// get the data from the request and parse it as structure
-	data := c.Param(`data`).(UserId)
-
-	// Validate the inputed data
-	err := data.Validate()
-	if err != nil {
-		if _, ok := err.(validation.InternalError); ok {
-			return nil, err
-		}
-		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
-	}
-
-	// check the user already exists or not
-	queryString := fmt.Sprintf("{\"selector\":{\"email\":\"%s\",\"doc_type\":\"%s\"}}", data.ID, utils.DocTypeUser)
-	user, user_id, err := utils.Get(c, queryString, fmt.Sprintf("User does not already exists with email id %s!", data.ID))
-	if user == nil {
-		return nil, err
+		// Save the data and return the response
+		return responseBody, c.State().Put(stub.GetTxID(), data)
 	}
 
 	userData := UserResponse{}
-	err = json.Unmarshal(user, &userData)
+	err = json.Unmarshal(address, &userData)
 	if err != nil {
 		return nil, status.ErrInternal.WithError(err)
 	}
@@ -231,9 +216,9 @@ func AddAsset(c router.Context) (interface{}, error) {
 
 	// check already exists
 	queryString := fmt.Sprintf("{\"selector\":{\"code\":\"%s\",\"doc_type\":\"%s\"}}", data.Code, utils.DocTypeAsset)
-	asset, _, err := utils.Get(c, queryString, fmt.Sprintf("Symbol %s already exists!", data.Code))
+	asset, _, err := utils.Get(c, queryString, "")
 	if asset != nil {
-		return nil, err
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("Symbol %s already exists!", data.Code))
 	}
 
 	stub := c.Stub()
@@ -253,7 +238,7 @@ func AddAsset(c router.Context) (interface{}, error) {
 	}
 
 	user.WalletBalance = user.WalletBalance - 5
-	responseBody := utils.ResponseID{ID: txID}
+	responseBody := ResponseAddAsset{ID: txID, Balance: user.WalletBalance}
 
 	// Save the data and return the response
 	return responseBody, c.State().Put(data.UserID, user)
@@ -274,11 +259,12 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	}
 
 	// check receiver data
-	queryRecevierString := fmt.Sprintf("{\"selector\":{\"_id\":\"%s\",\"doc_type\":\"%s\"}}", data.To, utils.DocTypeUser)
-	receiverData, _, err5 := utils.Get(c, queryRecevierString, fmt.Sprintf("Receiver %s does not exists!"))
+	queryRecevierString := fmt.Sprintf("{\"selector\":{\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.To, utils.DocTypeUser)
+	receiverData, receiverID, err5 := utils.Get(c, queryRecevierString, fmt.Sprintf("Receiver %s does not exist!",data.To))
 	if err5 != nil {
 		return nil, err5
 	}
+
 	receiver := User{}
 	err = json.Unmarshal(receiverData, &receiver)
 	if err != nil {
@@ -287,7 +273,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 
 	// check sender data
 	querySenderString := fmt.Sprintf("{\"selector\":{\"_id\":\"%s\",\"doc_type\":\"%s\"}}", data.From, utils.DocTypeUser)
-	senderData, _, err6 := utils.Get(c, querySenderString, fmt.Sprintf("You account %s does not exists!"))
+	senderData, _, err6 := utils.Get(c, querySenderString, fmt.Sprintf("You account %s does not exist!",data.From))
 	if err6 != nil {
 		return nil, err6
 	}
@@ -299,7 +285,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 
 	// check sender asset data
 	queryString := fmt.Sprintf("{\"selector\":{\"code\":\"%s\",\"user_id\":\"%s\",\"doc_type\":\"%s\"}}", data.Code, data.From, utils.DocTypeAsset)
-	senderAssetData, senderAssetKey, err2 := utils.Get(c, queryString, fmt.Sprintf("Symbol %s does not exists!", data.Code))
+	senderAssetData, senderAssetKey, err2 := utils.Get(c, queryString, fmt.Sprintf("Symbol %s does not exist!", data.Code))
 	if senderAssetData == nil {
 		return nil, err2
 	}
@@ -313,16 +299,16 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	}
 	stub := c.Stub()
 	txID := stub.GetTxID()
-
+	data.CreatedAt = time.Now().Format(time.RFC3339)
 	// sender transactions
-	var senderTransaction = Transaction{UserName: receiver.Name, UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction}
+	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt}
 	err = c.State().Put(txID, senderTransaction)
 	if err != nil {
 		return nil, err
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserName: sender.Name, UserID: data.To, Type: 2, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction}
+	var receiveTransaction = Transaction{UserID: receiverID, Type: 2, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt}
 	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
 	if err != nil {
 		return nil, err
@@ -337,11 +323,11 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	}
 
 	// check receiver asset data
-	queryReceiverDataString := fmt.Sprintf("{\"selector\":{\"code\":\"%s\",\"user_id\":\"%s\",\"doc_type\":\"%s\"}}", data.Code, data.To, utils.DocTypeAsset)
+	queryReceiverDataString := fmt.Sprintf("{\"selector\":{\"code\":\"%s\",\"user_id\":\"%s\",\"doc_type\":\"%s\"}}", data.Code, receiverID, utils.DocTypeAsset)
 	receiverAssetData, receiveAssetKey, _ := utils.Get(c, queryReceiverDataString, "")
 	if receiverAssetData == nil {
 		// add to receiver asset
-		var receiveAsset = Asset{UserID: data.To, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeAsset}
+		var receiveAsset = Asset{UserID: receiverID, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeAsset}
 		err = c.State().Put(txID+strconv.Itoa(3), receiveAsset)
 		if err != nil {
 			return nil, err

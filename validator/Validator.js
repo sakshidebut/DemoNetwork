@@ -42,9 +42,9 @@ function createUser(req, res, next) {
 // Validate getUser API
 function getUser(req, res, next) {
     // Check user id
-    req.checkBody('id')
-        .exists().withMessage('The id field is required.')
-        .notEmpty().withMessage('The id field is required.');
+    req.checkBody('address')
+        .exists().withMessage('The address field is required.')
+        .notEmpty().withMessage('The address field is required.');
 
     // validation errors
     let error = req.validationErrors();
