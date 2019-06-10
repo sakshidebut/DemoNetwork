@@ -68,6 +68,16 @@ router.post('/issue-token', validator.issueToken, function (req, res, next) {
     });
 });
 
+//check symbol
+router.post('/check-symbol', validator.checkSymbol, function (req, res, next) {
+    user_object.checkSymbol(req.body).then(result => {
+        res.status(result.status).json(result.data);
+    }).catch(result => {
+        //error handling
+        res.status(result.status).json(result.data);
+    });
+});
+
 //get tokens
 router.post('/get-token', validator.getToken, function (req, res, next) {
     user_object.getToken(req.body).then(result => {

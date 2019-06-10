@@ -23,6 +23,13 @@ func (data Asset) Validate() error {
 	)
 }
 
+// Validate Validates the CheckAssetStruct Structure
+func (data CheckAssetStruct) Validate() error {
+	return validation.ValidateStruct(&data,
+		validation.Field(&data.Code, validation.Required.Error(utils.CodeRequired), validation.NotNil.Error(utils.CodeRequired)),
+	)
+}
+
 // Validate Validates the UserId Structure
 func (data UserId) Validate() error {
 	return validation.ValidateStruct(&data,

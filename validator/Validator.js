@@ -101,6 +101,24 @@ function issueToken(req, res, next) {
     }
 }
 
+// Validate checkSymbol API
+function checkSymbol(req, res, next) {
+
+    // Check code
+    req.checkBody('code')
+        .exists().withMessage('The code field is required.')
+        .notEmpty().withMessage('The code field is required.');
+
+    // validation errors
+    let error = req.validationErrors();
+    if (error) {
+        let message = error[0].msg;
+        res.status(422).json({ message: message, key: error[0].param });
+    } else {
+        next();
+    }
+}
+
 // Validate getToken API
 function getToken(req, res, next) {
     // Check user id
@@ -151,4 +169,4 @@ function transferToken(req, res, next) {
     }
 }
 
-module.exports = { createUser, getUser, allUsers, issueToken, getToken, transferToken };
+module.exports = { createUser, getUser, allUsers, issueToken, checkSymbol, getToken, transferToken };

@@ -30,6 +30,12 @@ class UserController {
         return response;
     }
 
+    async checkSymbol(data) {
+        // Invoke the chaincode function
+        let response = await FabricController.invoke(config.user, config.channel, config.chaincode, 'checkAsset', data);
+        return response;
+    }
+
     async getToken(data) {
         // Invoke the chaincode function
         let response = await FabricController.invoke(config.user, config.channel, config.chaincode, 'getAssets', data);

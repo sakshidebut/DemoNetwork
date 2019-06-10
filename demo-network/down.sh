@@ -9,6 +9,8 @@ docker volume prune
 #Prune network
 docker network prune
 
+docker rmi -f $(docker images | awk '($1 ~ /dev-peer.*.walletdemo.*/) {print $3}')
+
 #Remove certificates
 #rm -rf crypto-config/
 

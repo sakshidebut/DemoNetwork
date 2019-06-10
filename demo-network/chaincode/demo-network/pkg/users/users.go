@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
 	"github.com/chaincode/demo-network/pkg/core/status"
 	"github.com/chaincode/demo-network/pkg/core/utils"
 
@@ -41,7 +42,7 @@ func GetUser(c router.Context) (interface{}, error) {
 	// check if address already exists or not
 	queryString := fmt.Sprintf("{\"selector\":{\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.Address, utils.DocTypeUser)
 	address, user_id, err := utils.Get(c, queryString, fmt.Sprintf("Address already exists with the given address %s!", data.Address))
-	
+
 	//If address not found
 	if address == nil {
 		// return nil, err
@@ -49,7 +50,7 @@ func GetUser(c router.Context) (interface{}, error) {
 		stub := c.Stub()
 
 		// prepare the response body
-		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance,CreatedAt: data.CreatedAt}
+		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, CreatedAt: data.CreatedAt}
 
 		// Save the data and return the response
 		return responseBody, c.State().Put(stub.GetTxID(), data)
@@ -88,6 +89,7 @@ func GetUsers(c router.Context) (interface{}, error) {
 		fmt.Println(err)
 		return nil, status.ErrInternal.WithError(err)
 	}
+
 	defer resultsIterator.Close()
 
 	// buffer is a JSON array containing QueryResults
@@ -244,6 +246,33 @@ func AddAsset(c router.Context) (interface{}, error) {
 	return responseBody, c.State().Put(data.UserID, user)
 }
 
+// CheckAsset to check asset is available or not
+func CheckAsset(c router.Context) (interface{}, error) {
+	// get the data from the request and parse it as structure
+	data := c.Param(`data`).(CheckAssetStruct)
+
+	// Validate the inputed data
+	err := data.Validate()
+	if err != nil {
+		if _, ok := err.(validation.InternalError); ok {
+			return nil, err
+		}
+		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
+	}
+
+	// check already exists
+	queryString := fmt.Sprintf("{\"selector\":{\"code\":\"%s\",\"doc_type\":\"%s\"}}", data.Code, utils.DocTypeAsset)
+	asset, _, err := utils.Get(c, queryString, "")
+	if asset != nil {
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("Symbol %s already exists!", data.Code))
+	}
+
+	responseBody := utils.ResponseMessage{Message: "Symbol Available!"}
+
+	// return the response
+	return responseBody, nil
+}
+
 // TransferAsset to transfer asset to another user
 func TransferAsset(c router.Context) (interface{}, error) {
 	// get the data from the request and parse it as structure
@@ -260,7 +289,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 
 	// check receiver data
 	queryRecevierString := fmt.Sprintf("{\"selector\":{\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.To, utils.DocTypeUser)
-	receiverData, receiverID, err5 := utils.Get(c, queryRecevierString, fmt.Sprintf("Receiver %s does not exist!",data.To))
+	receiverData, receiverID, err5 := utils.Get(c, queryRecevierString, fmt.Sprintf("Receiver %s does not exist!", data.To))
 	if err5 != nil {
 		return nil, err5
 	}
@@ -271,9 +300,13 @@ func TransferAsset(c router.Context) (interface{}, error) {
 		return nil, status.ErrInternal.WithError(err)
 	}
 
+	if receiver.Address == data.To {
+		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You can't transfer asset to yourself!"))
+	}
+
 	// check sender data
 	querySenderString := fmt.Sprintf("{\"selector\":{\"_id\":\"%s\",\"doc_type\":\"%s\"}}", data.From, utils.DocTypeUser)
-	senderData, _, err6 := utils.Get(c, querySenderString, fmt.Sprintf("You account %s does not exist!",data.From))
+	senderData, _, err6 := utils.Get(c, querySenderString, fmt.Sprintf("You account %s does not exist!", data.From))
 	if err6 != nil {
 		return nil, err6
 	}
