@@ -300,10 +300,6 @@ func TransferAsset(c router.Context) (interface{}, error) {
 		return nil, status.ErrInternal.WithError(err)
 	}
 
-	if receiver.Address == data.To {
-		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You can't transfer asset to yourself!"))
-	}
-
 	// check sender data
 	querySenderString := fmt.Sprintf("{\"selector\":{\"_id\":\"%s\",\"doc_type\":\"%s\"}}", data.From, utils.DocTypeUser)
 	senderData, _, err6 := utils.Get(c, querySenderString, fmt.Sprintf("You account %s does not exist!", data.From))
@@ -314,6 +310,10 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	err = json.Unmarshal(senderData, &sender)
 	if err != nil {
 		return nil, status.ErrInternal.WithError(err)
+	}
+
+	if sender.Address == data.To {
+		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You can't transfer asset to yourself!"))
 	}
 
 	// check sender asset data
