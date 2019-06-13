@@ -356,6 +356,13 @@ func TransferAsset(c router.Context) (interface{}, error) {
 		return nil, status.ErrInternal.WithError(err)
 	}
 
+	var receiverLabel string
+	for i := range receiver.UserAddresses {
+		if receiver.UserAddresses[i].Value == data.To {
+			receiverLabel = receiver.UserAddresses[i].Label
+		}
+	}
+	fmt.Println(receiverLabel)
 	// check sender data
 	querySenderString := fmt.Sprintf("{\"selector\":{\"_id\":\"%s\",\"doc_type\":\"%s\"}}", data.From, utils.DocTypeUser)
 	senderData, _, err6 := utils.Get(c, querySenderString, fmt.Sprintf("You account %s does not exist!", data.From))
@@ -370,7 +377,6 @@ func TransferAsset(c router.Context) (interface{}, error) {
 
 	for i := range sender.UserAddresses {
 		if sender.UserAddresses[i].Value == data.To {
-			fmt.Println("Found")
 			return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You can't transfer asset to yourself!"))
 		}
 	}
@@ -393,14 +399,14 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	txID := stub.GetTxID()
 	data.CreatedAt = time.Now().Format(time.RFC3339)
 	// sender transactions
-	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To}
+	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel}
 	err = c.State().Put(txID, senderTransaction)
 	if err != nil {
 		return nil, err
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserID: receiverID, Type: 2, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To}
+	var receiveTransaction = Transaction{UserID: receiverID, Type: 2, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel}
 	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
 	if err != nil {
 		return nil, err

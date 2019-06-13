@@ -36,6 +36,7 @@ type Transaction struct {
 	Code         string `json:"code"`
 	Quantity     int    `json:"quantity"`
 	AddressValue string `json:"address_value"`
+	LabelValue   string `json:"label_value"`
 	DocType      string `json:"doc_type"`
 	CreatedAt    string `json:"created_at"`
 }
@@ -77,6 +78,7 @@ type TransactionResponse struct {
 	Code         string `json:"code"`
 	Quantity     int    `json:"quantity"`
 	AddressValue string `json:"address_value"`
+	LabelValue   string `json:"label_value"`
 	DocType      string `json:"doc_type"`
 	CreatedAt    string `json:"created_at"`
 }
