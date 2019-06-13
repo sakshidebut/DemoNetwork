@@ -14,6 +14,14 @@ func (data User) Validate() error {
 	)
 }
 
+// Validate Validates the Address Structure
+func (data Address) Validate() error {
+	return validation.ValidateStruct(&data,
+		validation.Field(&data.Label, validation.Required.Error(utils.AddressRequired), validation.NotNil.Error(utils.AddressRequired)),
+		validation.Field(&data.Value, validation.Required.Error(utils.AddressRequired), validation.NotNil.Error(utils.AddressRequired)),
+	)
+}
+
 // Validate Validates the Asset Structure
 func (data Asset) Validate() error {
 	return validation.ValidateStruct(&data,

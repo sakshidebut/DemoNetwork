@@ -6,15 +6,15 @@ const FabricController = new FabricOperation();
 
 class UserController {
 
-    async createUser(data) {
-        // Invoke the chaincode function
-        let response = await FabricController.invoke(config.user, config.channel, config.chaincode, 'createUser', data);
-        return response;
-    }
-
     async getUser(data) {
         // Invoke the chaincode function
         let response = await FabricController.invoke(config.user, config.channel, config.chaincode, 'getUser', data);
+        return response;
+    }
+
+    async addAddress(data) {
+        // Invoke the chaincode function
+        let response = await FabricController.invoke(config.user, config.channel, config.chaincode, 'addAddress', data);
         return response;
     }
 

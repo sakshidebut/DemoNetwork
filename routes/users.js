@@ -19,18 +19,8 @@ router.get('/enroll-admin', function (req, res, next) {
 });
 
 //enroll user1
-router.get('/enroll-user', function (req, res, next) {
-    CAClientController.enrollUser(req.body).then(result => {
-        res.status(result.status).json(result.data);
-    }).catch(result => {
-        //error handling
-        res.status(result.status).json(result.data);
-    });
-});
-
-//create a new user
-router.post('/create-user', validator.createUser, function (req, res, next) {
-    user_object.createUser(req.body).then(result => {
+router.post('/enroll-user', function (req, res, next) {
+    CAClientController.enrollUser(req.body.username).then(result => {
         res.status(result.status).json(result.data);
     }).catch(result => {
         //error handling
@@ -41,6 +31,16 @@ router.post('/create-user', validator.createUser, function (req, res, next) {
 //get user details
 router.post('/get-user', validator.getUser, function (req, res, next) {
     user_object.getUser(req.body).then(result => {
+        res.status(result.status).json(result.data);
+    }).catch(result => {
+        //error handling
+        res.status(result.status).json(result.data);
+    });
+});
+
+//add user's addresses
+router.post('/add-address', function (req, res, next) {
+    user_object.addAddress(req.body).then(result => {
         res.status(result.status).json(result.data);
     }).catch(result => {
         //error handling

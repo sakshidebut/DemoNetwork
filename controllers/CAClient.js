@@ -59,14 +59,15 @@ class CAClient {
     /**
      * Register & enroll user with CA
      */
-    async enrollUser() {
+    async enrollUser(username) {
         try {
+            console.log(username);
             console.log(`Wallet path: ${walletPath}`);
 
             // Check to see if we've already enrolled the user.
-            const userExists = await wallet.exists(config.user);
+            const userExists = await wallet.exists(username);
             if (userExists) {
-                return 'An identity for the user "' + config.user + '" already exists in the wallet';
+                return 'An identity for the user "' + username + '" already exists in the wallet';
             }
 
             // Check to see if we've already enrolled the admin user.
@@ -84,19 +85,19 @@ class CAClient {
             const adminIdentity = gateway.getCurrentIdentity();
 
             // Register the user, enroll the user, and import the new identity into the wallet.
-            const secret = await ca.register({ affiliation: 'org1.department1', enrollmentID: config.user, role: 'client' }, adminIdentity);
-            const enrollment = await ca.enroll({ enrollmentID: config.user, enrollmentSecret: secret });
+            const secret = await ca.register({ affiliation: 'org1.department1', enrollmentID: username, role: 'client' }, adminIdentity);
+            const enrollment = await ca.enroll({ enrollmentID: username, enrollmentSecret: secret });
             const userIdentity = X509WalletMixin.createIdentity('Org1MSP', enrollment.certificate, enrollment.key.toBytes());
-            await wallet.import(config.user, userIdentity);
+            await wallet.import(username, userIdentity);
             return {
                 status: 200,
-                data: 'Successfully registered and enrolled admin user "' + config.user + '" and imported it into the wallet'
+                data: 'Successfully registered and enrolled admin user "' + username + '" and imported it into the wallet'
             };
 
         } catch (error) {
             return {
                 status: 500,
-                data: `Failed to register user "` + config.user + `": ${error}`
+                data: `Failed to register user "` + username + `": ${error}`
             };
         }
     }

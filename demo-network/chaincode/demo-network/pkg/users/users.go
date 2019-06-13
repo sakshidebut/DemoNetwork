@@ -15,11 +15,6 @@ import (
 	"github.com/s7techlab/cckit/router"
 )
 
-type ResponseAddAsset struct {
-	ID      string `json:"_id"`
-	Balance int64  `json:"balance"`
-}
-
 // GetUser create the user
 func GetUser(c router.Context) (interface{}, error) {
 	// get the data from the request and parse it as structure
@@ -40,8 +35,8 @@ func GetUser(c router.Context) (interface{}, error) {
 	}
 
 	// check if address already exists or not
-	queryString := fmt.Sprintf("{\"selector\":{\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.Address, utils.DocTypeUser)
-	address, user_id, err := utils.Get(c, queryString, fmt.Sprintf("Address already exists with the given address %s!", data.Address))
+	queryString := fmt.Sprintf("{\"selector\": {\"user_addresses\": {\"$elemMatch\": {\"value\": \"%s\"}},\"doc_type\":\"%s\"}}", data.Address, utils.DocTypeUser)
+	address, userID, err := utils.Get(c, queryString, fmt.Sprintf("Address already exists with the given address %s!", data.Address))
 
 	//If address not found
 	if address == nil {
@@ -49,8 +44,13 @@ func GetUser(c router.Context) (interface{}, error) {
 		// get the stub to use it for query and save
 		stub := c.Stub()
 
+		var addresses []Address
+		address1 := Address{UserID: stub.GetTxID(), Label: "Original", Value: data.Address}
+		addresses = append(addresses, address1)
+		data.UserAddresses = addresses
+
 		// prepare the response body
-		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, CreatedAt: data.CreatedAt}
+		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, CreatedAt: data.CreatedAt, UserAddresses: addresses}
 
 		// Save the data and return the response
 		return responseBody, c.State().Put(stub.GetTxID(), data)
@@ -61,12 +61,53 @@ func GetUser(c router.Context) (interface{}, error) {
 	if err != nil {
 		return nil, status.ErrInternal.WithError(err)
 	}
-	userData.ID = user_id
+	userData.ID = userID
 
 	userBytes, _ := json.Marshal(userData)
 
 	//return the response
 	return userBytes, nil
+}
+
+// AddAddress : Function to add the multiple addresses of user
+func AddAddress(c router.Context) (interface{}, error) {
+	// get the data from the request and parse it as structure
+	data := c.Param(`data`).(Address)
+
+	// Validate the inputed data
+	err := data.Validate()
+	if err != nil {
+		if _, ok := err.(validation.InternalError); ok {
+			return nil, err
+		}
+		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
+	}
+
+	// check if address already exists or not
+	queryString := fmt.Sprintf("{\"selector\": {\"user_addresses\": {\"$elemMatch\": {\"value\": \"%s\"}},\"doc_type\":\"%s\"}}", data.Value, utils.DocTypeUser)
+	userResult, _, err := utils.Get(c, queryString, fmt.Sprintf("User already exists with the given address %s!", data.Value))
+
+	if userResult != nil {
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("This address %s already exists in the system!", data.Value))
+	}
+
+	address1 := Address{UserID: data.UserID, Label: data.Label, Value: data.Value}
+	stub := c.Stub()
+	userAsBytes, _ := stub.GetState(data.UserID)
+	user := User{}
+
+	err = json.Unmarshal(userAsBytes, &user)
+	if err != nil {
+		return nil, err
+	}
+
+	user.UserAddresses = append(user.UserAddresses, address1)
+	fmt.Println(user)
+	// prepare the response body
+	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses}
+	fmt.Println(responseBody)
+	// Save the data and return the response
+	return responseBody, c.State().Put(data.UserID, user)
 }
 
 // GetUsers get the all users
@@ -334,14 +375,14 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	txID := stub.GetTxID()
 	data.CreatedAt = time.Now().Format(time.RFC3339)
 	// sender transactions
-	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt}
+	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: "null"}
 	err = c.State().Put(txID, senderTransaction)
 	if err != nil {
 		return nil, err
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserID: receiverID, Type: 2, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt}
+	var receiveTransaction = Transaction{UserID: receiverID, Type: 2, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To}
 	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
 	if err != nil {
 		return nil, err
