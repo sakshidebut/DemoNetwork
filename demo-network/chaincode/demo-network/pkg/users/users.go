@@ -91,6 +91,14 @@ func AddAddress(c router.Context) (interface{}, error) {
 		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("This address %s already exists in the system!", data.Value))
 	}
 
+	// check if address already exists or not
+	labelQueryString := fmt.Sprintf("{\"selector\": {\"user_addresses\": {\"$elemMatch\": {\"label\": \"%s\"}},\"doc_type\":\"%s\"}}", data.Label, utils.DocTypeUser)
+	labelResult, _, err := utils.Get(c, labelQueryString, fmt.Sprintf("User already exists with the given label %s!", data.Label))
+
+	if labelResult != nil {
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("This label %s already exists in the system!", data.Label))
+	}
+
 	address1 := Address{UserID: data.UserID, Label: data.Label, Value: data.Value}
 	stub := c.Stub()
 	userAsBytes, _ := stub.GetState(data.UserID)
@@ -102,10 +110,8 @@ func AddAddress(c router.Context) (interface{}, error) {
 	}
 
 	user.UserAddresses = append(user.UserAddresses, address1)
-	fmt.Println(user)
 	// prepare the response body
 	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses}
-	fmt.Println(responseBody)
 	// Save the data and return the response
 	return responseBody, c.State().Put(data.UserID, user)
 }
@@ -329,7 +335,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	}
 
 	// check receiver data
-	queryRecevierString := fmt.Sprintf("{\"selector\":{\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.To, utils.DocTypeUser)
+	queryRecevierString := fmt.Sprintf("{\"selector\": {\"user_addresses\": {\"$elemMatch\": {\"value\": \"%s\"}},\"doc_type\":\"%s\"}}", data.To, utils.DocTypeUser)
 	receiverData, receiverID, err5 := utils.Get(c, queryRecevierString, fmt.Sprintf("Receiver %s does not exist!", data.To))
 	if err5 != nil {
 		return nil, err5
@@ -353,8 +359,11 @@ func TransferAsset(c router.Context) (interface{}, error) {
 		return nil, status.ErrInternal.WithError(err)
 	}
 
-	if sender.Address == data.To {
-		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You can't transfer asset to yourself!"))
+	for i := range sender.UserAddresses {
+		if sender.UserAddresses[i].Value == data.To {
+			fmt.Println("Found")
+			return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You can't transfer asset to yourself!"))
+		}
 	}
 
 	// check sender asset data
@@ -375,7 +384,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	txID := stub.GetTxID()
 	data.CreatedAt = time.Now().Format(time.RFC3339)
 	// sender transactions
-	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: "null"}
+	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To}
 	err = c.State().Put(txID, senderTransaction)
 	if err != nil {
 		return nil, err
