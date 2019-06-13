@@ -4,7 +4,6 @@
 
 'use strict';
 
-const config = require('../config/config.js');
 const FabricCAServices = require('fabric-ca-client');
 const { FileSystemWallet, X509WalletMixin, Gateway } = require('fabric-network');
 const fs = require('fs');
@@ -36,7 +35,10 @@ class CAClient {
             // Check to see if we've already enrolled the admin user.
             const adminExists = await wallet.exists('admin');
             if (adminExists) {
-                return 'An identity for the admin user "admin" already exists in the wallet';
+                return {
+                    status: 422,
+                    data: 'An identity for the admin user "admin" already exists in the wallet'
+                };
             }
 
             // Enroll the admin user, and import the new identity into the wallet.
@@ -67,13 +69,19 @@ class CAClient {
             // Check to see if we've already enrolled the user.
             const userExists = await wallet.exists(username);
             if (userExists) {
-                return 'An identity for the user "' + username + '" already exists in the wallet';
+                return {
+                    status: 422,
+                    data: 'An identity for the user "' + username + '" already exists in the wallet'
+                };
             }
 
             // Check to see if we've already enrolled the admin user.
             const adminExists = await wallet.exists('admin');
             if (!adminExists) {
-                return 'An identity for the admin user "admin" does not exist in the wallet';
+                return {
+                    status: 422,
+                    data: 'An identity for the admin user "admin" does not exist in the wallet'
+                };
             }
 
             // Create a new gateway for connecting to our peer node.

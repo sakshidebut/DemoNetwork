@@ -233,11 +233,20 @@ func GetAssets(c router.Context) (interface{}, error) {
 			return nil, status.ErrInternal.WithError(err)
 		}
 
+		txnData := TransactionResponse{}
+		err3 := json.Unmarshal(queryResponse2.Value, &txnData)
+		if err3 != nil {
+			return nil, status.ErrInternal.WithError(err3)
+		}
+
+		txnData.ID = queryResponse2.Key
+		txnDataBytes, _ := json.Marshal(txnData)
+
 		// Add a comma before array members, suppress it for the first array member
 		if bArrayMemberAlreadyWritten == true {
 			buffer.WriteString(",")
 		}
-		buffer.WriteString(string(queryResponse2.Value))
+		buffer.WriteString(string(txnDataBytes))
 		bArrayMemberAlreadyWritten = true
 	}
 	buffer.WriteString("]}")

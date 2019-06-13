@@ -68,3 +68,15 @@ type ResponseAddAsset struct {
 	ID      string `json:"_id"`
 	Balance int64  `json:"balance"`
 }
+
+// Define the transactions structure
+type TransactionResponse struct {
+	ID           string `json:"_id"`
+	UserID       string `json:"user_id"`
+	Type         int32  `json:"type"`
+	Code         string `json:"code"`
+	Quantity     int    `json:"quantity"`
+	AddressValue string `json:"address_value"`
+	DocType      string `json:"doc_type"`
+	CreatedAt    string `json:"created_at"`
+}
