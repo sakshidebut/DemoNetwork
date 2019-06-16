@@ -23,6 +23,7 @@ func GetUser(c router.Context) (interface{}, error) {
 	// set the default values for the fields
 	data.DocType = utils.DocTypeUser
 	data.WalletBalance = 10000
+	data.Symbol = "ABTC"
 	data.CreatedAt = time.Now().Format(time.RFC3339)
 
 	// Validate the inputed data
@@ -50,7 +51,7 @@ func GetUser(c router.Context) (interface{}, error) {
 		data.UserAddresses = addresses
 
 		// prepare the response body
-		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, CreatedAt: data.CreatedAt, UserAddresses: addresses}
+		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, Symbol: data.Symbol, CreatedAt: data.CreatedAt, UserAddresses: addresses}
 
 		// Save the data and return the response
 		return responseBody, c.State().Put(stub.GetTxID(), data)
@@ -111,7 +112,7 @@ func AddAddress(c router.Context) (interface{}, error) {
 
 	user.UserAddresses = append(user.UserAddresses, address1)
 	// prepare the response body
-	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses}
+	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, Symbol: user.Symbol, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses}
 	// Save the data and return the response
 	return responseBody, c.State().Put(data.UserID, user)
 }
@@ -188,6 +189,23 @@ func GetAssets(c router.Context) (interface{}, error) {
 	}
 
 	stub := c.Stub()
+	queryUserString := fmt.Sprintf("{\"selector\":{\"_id\":\"%s\",\"doc_type\":\"%s\"}}", data.ID, utils.DocTypeUser)
+	userData, _, err1 := utils.Get(c, queryUserString, fmt.Sprintf("User %s does not exist!", data.ID))
+	if err1 != nil {
+		return nil, err1
+	}
+
+	user := User{}
+	err = json.Unmarshal(userData, &user)
+	if err != nil {
+		return nil, status.ErrInternal.WithError(err)
+	}
+	responseBody := ResponseAddAsset{ID: data.ID, Balance: user.WalletBalance, Symbol: user.Symbol}
+	resBytes, _ := json.Marshal(responseBody)
+	if err != nil {
+		return nil, status.ErrInternal.WithError(err)
+	}
+
 	queryString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"doc_type\":\"%s\"}}", data.ID, utils.DocTypeAsset)
 	resultsIterator, err := stub.GetQueryResult(queryString)
 	if err != nil {
@@ -223,7 +241,9 @@ func GetAssets(c router.Context) (interface{}, error) {
 		aArrayMemberAlreadyWritten = true
 	}
 	buffer.WriteString("],")
-
+	buffer.WriteString("\"wallet_balance\": ")
+	buffer.WriteString(string(resBytes))
+	buffer.WriteString(",")
 	buffer.WriteString("\"transactions\": [")
 
 	bArrayMemberAlreadyWritten := false
@@ -295,8 +315,8 @@ func AddAsset(c router.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	user.WalletBalance = user.WalletBalance - 5
-	responseBody := ResponseAddAsset{ID: txID, Balance: user.WalletBalance}
+	user.WalletBalance = user.WalletBalance - 880
+	responseBody := ResponseAddAsset{ID: txID, Balance: user.WalletBalance, Symbol: user.Symbol}
 
 	// Save the data and return the response
 	return responseBody, c.State().Put(data.UserID, user)
@@ -444,8 +464,77 @@ func TransferAsset(c router.Context) (interface{}, error) {
 		}
 	}
 
-	responseBody := utils.ResponseID{ID: txID}
+	sender.WalletBalance = sender.WalletBalance - 3
+	responseBody := ResponseAddAsset{ID: txID, Balance: sender.WalletBalance, Symbol: sender.Symbol}
 
+	// Save the data and return the response
+	return responseBody, c.State().Put(data.From, sender)
+}
+
+// TransferBalance to transfer asset to another user
+func TransferBalance(c router.Context) (interface{}, error) {
+	// get the data from the request and parse it as structure
+	data := c.Param(`data`).(SendBalance)
+
+	// Validate the inputed data
+	err := data.Validate()
+	if err != nil {
+		if _, ok := err.(validation.InternalError); ok {
+			return nil, err
+		}
+		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
+	}
+
+	// check receiver data
+	queryRecevierString := fmt.Sprintf("{\"selector\": {\"user_addresses\": {\"$elemMatch\": {\"value\": \"%s\"}},\"doc_type\":\"%s\"}}", data.To, utils.DocTypeUser)
+	receiverData, _, err5 := utils.Get(c, queryRecevierString, fmt.Sprintf("Receiver %s does not exist!", data.To))
+	if err5 != nil {
+		return nil, err5
+	}
+
+	receiver := User{}
+	err = json.Unmarshal(receiverData, &receiver)
+	if err != nil {
+		return nil, status.ErrInternal.WithError(err)
+	}
+
+	// check sender data
+	querySenderString := fmt.Sprintf("{\"selector\":{\"_id\":\"%s\",\"doc_type\":\"%s\"}}", data.From, utils.DocTypeUser)
+	senderData, _, err6 := utils.Get(c, querySenderString, fmt.Sprintf("You account %s does not exist!", data.From))
+	if err6 != nil {
+		return nil, err6
+	}
+	sender := User{}
+	err = json.Unmarshal(senderData, &sender)
+	if err != nil {
+		return nil, status.ErrInternal.WithError(err)
+	}
+
+	for i := range sender.UserAddresses {
+		if sender.UserAddresses[i].Value == data.To {
+			return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You can't transfer coins to yourself!"))
+		}
+	}
+
+	if data.Quantity > sender.WalletBalance {
+		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("Quantity should be less or equal to %d", sender.WalletBalance))
+	}
+
+	// update sender wallet
+	sender.WalletBalance = sender.WalletBalance - data.Quantity
+	err = c.State().Put(data.From, sender)
+	if err != nil {
+		return nil, err
+	}
+
+	// update receiver wallet
+	receiver.WalletBalance = receiver.WalletBalance + data.Quantity
+	err = c.State().Put(receiver.UserAddresses[0].UserID, receiver)
+	if err != nil {
+		return nil, err
+	}
+
+	responseBody := ResponseAddAsset{ID: data.From, Balance: sender.WalletBalance, Symbol: sender.Symbol}
 	// return the response
 	return responseBody, nil
 }

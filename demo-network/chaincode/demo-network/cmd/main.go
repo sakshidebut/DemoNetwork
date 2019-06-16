@@ -50,6 +50,7 @@ func New() *Chaincode {
 	r.Invoke(`checkAsset`, users.CheckAsset, param.Struct(`data`, &users.CheckAssetStruct{}))
 	r.Invoke(`transferAsset`, users.TransferAsset, param.Struct(`data`, &users.GetTransaction{}))
 	r.Invoke(`addAddress`, users.AddAddress, param.Struct(`data`, &users.Address{}))
+	r.Invoke(`sendBalance`, users.TransferBalance, param.Struct(`data`, &users.SendBalance{}))
 
 	// return the routes
 	return chaincode

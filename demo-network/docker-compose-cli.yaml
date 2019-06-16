@@ -55,7 +55,7 @@ services:
       - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/c47c70d26c19ca9c8b1109f4b345d6c1ab9f2cf7dd7df11adcab4f55f00e6926_sk
     ports:
       - "7054:7054"
-    command: sh -c 'fabric-ca-server start -b admin:adminpw'
+    command: sh -c 'fabric-ca-server start --cfg.identities.allowremove --cfg.affiliations.allowremove -b admin:adminpw'
     volumes:
       - ./crypto-config/peerOrganizations/org1.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
     container_name: ca.example.com

@@ -11,6 +11,7 @@ type Address struct {
 type User struct {
 	Address       string    `json:"address"`
 	WalletBalance int64     `json:"wallet_balance"`
+	Symbol        string    `json:"symbol"`
 	DocType       string    `json:"doc_type"`
 	CreatedAt     string    `json:"created_at"`
 	UserAddresses []Address `json:"user_addresses"`
@@ -19,6 +20,7 @@ type User struct {
 // Define the asset structure
 type Asset struct {
 	UserID   string `json:"user_id"`
+	Label    string `json:"label"`
 	Code     string `json:"code"`
 	Quantity int    `json:"quantity"`
 	DocType  string `json:"doc_type"`
@@ -46,6 +48,7 @@ type UserResponse struct {
 	ID            string    `json:"_id"`
 	Address       string    `json:"address"`
 	WalletBalance int64     `json:"wallet_balance"`
+	Symbol        string    `json:"symbol"`
 	CreatedAt     string    `json:"created_at"`
 	UserAddresses []Address `json:"user_addresses"`
 }
@@ -68,6 +71,7 @@ type GetTransaction struct {
 type ResponseAddAsset struct {
 	ID      string `json:"_id"`
 	Balance int64  `json:"balance"`
+	Symbol  string `json:"symbol"`
 }
 
 // Define the transactions structure
@@ -81,4 +85,11 @@ type TransactionResponse struct {
 	LabelValue   string `json:"label_value"`
 	DocType      string `json:"doc_type"`
 	CreatedAt    string `json:"created_at"`
+}
+
+// Define the SendBalance structure
+type SendBalance struct {
+	From     string `json:"from_id"`
+	To       string `json:"to_id"`
+	Quantity int64  `json:"quantity"`
 }

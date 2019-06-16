@@ -70,6 +70,12 @@ class UserController {
         let response = await FabricController.invoke(data.user, config.channel, config.chaincode, 'transferAsset', data);
         return response;
     }
+
+    async sendCoins(data) {
+        // Invoke the chaincode function
+        let response = await FabricController.invoke(data.user, config.channel, config.chaincode, 'sendBalance', data);
+        return response;
+    }
 }
 
 module.exports = UserController;

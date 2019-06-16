@@ -26,6 +26,7 @@ func (data Address) Validate() error {
 func (data Asset) Validate() error {
 	return validation.ValidateStruct(&data,
 		validation.Field(&data.UserID, validation.Required.Error(utils.UserIDRequired), validation.NotNil.Error(utils.UserIDRequired)),
+		validation.Field(&data.Label, validation.Required.Error(utils.LabelRequired), validation.NotNil.Error(utils.LabelRequired)),
 		validation.Field(&data.Code, validation.Required.Error(utils.CodeRequired), validation.NotNil.Error(utils.CodeRequired)),
 		validation.Field(&data.Quantity, validation.Required.Error(utils.QuantityRequired), validation.NotNil.Error(utils.QuantityRequired)),
 	)
@@ -45,12 +46,21 @@ func (data UserId) Validate() error {
 	)
 }
 
-// Validate Validates the UserId Structure
+// Validate Validates the GetTransaction Structure
 func (data GetTransaction) Validate() error {
 	return validation.ValidateStruct(&data,
 		validation.Field(&data.From, validation.Required.Error(utils.IDRequired), validation.NotNil.Error(utils.IDRequired)),
 		validation.Field(&data.To, validation.Required.Error(utils.IDRequired), validation.NotNil.Error(utils.IDRequired)),
 		validation.Field(&data.Code, validation.Required.Error(utils.CodeRequired), validation.NotNil.Error(utils.CodeRequired)),
+		validation.Field(&data.Quantity, validation.Required.Error(utils.QuantityRequired), validation.NotNil.Error(utils.QuantityRequired)),
+	)
+}
+
+// Validate Validates the SendBalance Structure
+func (data SendBalance) Validate() error {
+	return validation.ValidateStruct(&data,
+		validation.Field(&data.From, validation.Required.Error(utils.IDRequired), validation.NotNil.Error(utils.IDRequired)),
+		validation.Field(&data.To, validation.Required.Error(utils.IDRequired), validation.NotNil.Error(utils.IDRequired)),
 		validation.Field(&data.Quantity, validation.Required.Error(utils.QuantityRequired), validation.NotNil.Error(utils.QuantityRequired)),
 	)
 }

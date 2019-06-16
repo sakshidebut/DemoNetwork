@@ -29,7 +29,7 @@ router.post('/get-user', validator.getUser, function (req, res, next) {
 });
 
 //add user's addresses
-router.post('/add-address', function (req, res, next) {
+router.post('/add-address', validator.addAddress, function (req, res, next) {
     user_object.addAddress(req.body).then(result => {
         res.status(result.status).json(result.data);
     }).catch(result => {
@@ -81,6 +81,16 @@ router.post('/get-token', validator.getToken, function (req, res, next) {
 //transfer token
 router.post('/transfer-token', validator.transferToken, function (req, res, next) {
     user_object.transferToken(req.body).then(result => {
+        res.status(result.status).json(result.data);
+    }).catch(result => {
+        //error handling
+        res.status(result.status).json(result.data);
+    });
+});
+
+//send coins
+router.post('/send-coins', validator.sendCoins, function (req, res, next) {
+    user_object.sendCoins(req.body).then(result => {
         res.status(result.status).json(result.data);
     }).catch(result => {
         //error handling
