@@ -22,7 +22,7 @@ type Asset struct {
 	UserID   string `json:"user_id"`
 	Label    string `json:"label"`
 	Code     string `json:"code"`
-	Quantity int    `json:"quantity"`
+	Quantity int64  `json:"quantity"`
 	DocType  string `json:"doc_type"`
 }
 
@@ -34,9 +34,10 @@ type CheckAssetStruct struct {
 // Define the transactions structure
 type Transaction struct {
 	UserID       string `json:"user_id"`
+	TxnType      string `json:"txn_type"`
 	Type         int32  `json:"type"`
 	Code         string `json:"code"`
-	Quantity     int    `json:"quantity"`
+	Quantity     int64  `json:"quantity"`
 	AddressValue string `json:"address_value"`
 	LabelValue   string `json:"label_value"`
 	DocType      string `json:"doc_type"`
@@ -63,7 +64,7 @@ type GetTransaction struct {
 	From      string `json:"from_id"`
 	To        string `json:"to_id"`
 	Code      string `json:"code"`
-	Quantity  int    `json:"quantity"`
+	Quantity  int64  `json:"quantity"`
 	DocType   string `json:"doc_type"`
 	CreatedAt string `json:"created_at"`
 }
@@ -78,9 +79,10 @@ type ResponseAddAsset struct {
 type TransactionResponse struct {
 	ID           string `json:"_id"`
 	UserID       string `json:"user_id"`
+	TxnType      string `json:"txn_type"`
 	Type         int32  `json:"type"`
 	Code         string `json:"code"`
-	Quantity     int    `json:"quantity"`
+	Quantity     int64  `json:"quantity"`
 	AddressValue string `json:"address_value"`
 	LabelValue   string `json:"label_value"`
 	DocType      string `json:"doc_type"`
