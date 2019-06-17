@@ -23,7 +23,7 @@ func GetUser(c router.Context) (interface{}, error) {
 	// set the default values for the fields
 	data.DocType = utils.DocTypeUser
 	data.WalletBalance = 10000
-	data.Symbol = "ABTC"
+	data.Symbol = utils.WalletCoinSymbol
 	data.CreatedAt = time.Now().Format(time.RFC3339)
 
 	// Validate the inputed data
@@ -93,11 +93,11 @@ func AddAddress(c router.Context) (interface{}, error) {
 	}
 
 	// check if address already exists or not
-	labelQueryString := fmt.Sprintf("{\"selector\": {\"user_addresses\": {\"$elemMatch\": {\"label\": \"%s\"}},\"doc_type\":\"%s\"}}", data.Label, utils.DocTypeUser)
+	labelQueryString := fmt.Sprintf("{\"selector\": {\"user_addresses\": {\"$elemMatch\": {\"label\": \"%s\"}},\"_id\":{\"$ne\":\"%s\"},\"doc_type\":\"%s\"}}", data.Label, data.UserID, utils.DocTypeUser)
 	labelResult, _, err := utils.Get(c, labelQueryString, fmt.Sprintf("User already exists with the given label %s!", data.Label))
 
 	if labelResult != nil {
-		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("This label %s already exists in the system!", data.Label))
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("This label %s has already been taken!", data.Label))
 	}
 
 	address1 := Address{UserID: data.UserID, Label: data.Label, Value: data.Value}
@@ -302,7 +302,7 @@ func AddAsset(c router.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	if user.WalletBalance < 880 {
+	if user.WalletBalance < utils.AddAssetFee {
 		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You don't have enough coins to purchase this asset."))
 	}
 
@@ -325,7 +325,16 @@ func AddAsset(c router.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	user.WalletBalance = user.WalletBalance - 880
+	user.WalletBalance = user.WalletBalance - utils.AddAssetFee
+
+	createdAt := time.Now().Format(time.RFC3339)
+	// sender transactions
+	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: "", Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", TxnType: utils.CoinTxnType}
+	err = c.State().Put(txID+strconv.Itoa(1), addAssetTransaction)
+	if err != nil {
+		return nil, err
+	}
+
 	responseBody := ResponseAddAsset{ID: txID, Balance: user.WalletBalance, Symbol: user.Symbol}
 
 	// Save the data and return the response
@@ -354,13 +363,13 @@ func CheckAsset(c router.Context) (interface{}, error) {
 	}
 
 	// check already exists
-	queryString1 := fmt.Sprintf("{\"selector\":{\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.Code, utils.DocTypeAsset)
+	queryString1 := fmt.Sprintf("{\"selector\":{\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.Label, utils.DocTypeAsset)
 	asset1, _, err := utils.Get(c, queryString1, "")
 	if asset1 != nil {
-		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("Symbol %s already exists!", data.Code))
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("Label %s already exists!", data.Label))
 	}
 
-	responseBody := utils.ResponseMessage{Message: "Symbol Available!"}
+	responseBody := utils.ResponseMessage{Message: "Both label and symbol are available."}
 
 	// return the response
 	return responseBody, nil
@@ -412,7 +421,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 		return nil, status.ErrInternal.WithError(err)
 	}
 
-	if sender.WalletBalance < 3 {
+	if sender.WalletBalance < utils.TransferAssetFee {
 		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("You don't have enough coins to transfer the asset."))
 	}
 
@@ -436,18 +445,19 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	if data.Quantity > senderAsset.Quantity {
 		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("Quantity should be less or equal to %d", senderAsset.Quantity))
 	}
+
 	stub := c.Stub()
 	txID := stub.GetTxID()
 	data.CreatedAt = time.Now().Format(time.RFC3339)
 	// sender transactions
-	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: "asset"}
+	var senderTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: data.Code, AssetLabel: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: utils.AssetTxnType}
 	err = c.State().Put(txID, senderTransaction)
 	if err != nil {
 		return nil, err
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserID: receiverID, Type: 2, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: "asset"}
+	var receiveTransaction = Transaction{UserID: receiverID, Type: utils.Receive, Code: data.Code, AssetLabel: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: utils.AssetTxnType}
 	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
 	if err != nil {
 		return nil, err
@@ -466,7 +476,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	receiverAssetData, receiveAssetKey, _ := utils.Get(c, queryReceiverDataString, "")
 	if receiverAssetData == nil {
 		// add to receiver asset
-		var receiveAsset = Asset{UserID: receiverID, Code: data.Code, Quantity: data.Quantity, DocType: utils.DocTypeAsset}
+		var receiveAsset = Asset{UserID: receiverID, Code: data.Code, Label: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeAsset}
 		err = c.State().Put(txID+strconv.Itoa(3), receiveAsset)
 		if err != nil {
 			return nil, err
@@ -485,7 +495,15 @@ func TransferAsset(c router.Context) (interface{}, error) {
 		}
 	}
 
-	sender.WalletBalance = sender.WalletBalance - 3
+	sender.WalletBalance = sender.WalletBalance - utils.TransferAssetFee
+
+	// sender transactions
+	var addAssetTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: "", Quantity: utils.TransferAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: "", LabelValue: "", TxnType: utils.CoinTxnType}
+	err = c.State().Put(txID+strconv.Itoa(4), addAssetTransaction)
+	if err != nil {
+		return nil, err
+	}
+
 	responseBody := ResponseAddAsset{ID: txID, Balance: sender.WalletBalance, Symbol: sender.Symbol}
 
 	// Save the data and return the response
@@ -545,14 +563,14 @@ func TransferBalance(c router.Context) (interface{}, error) {
 	txID := stub.GetTxID()
 	createdAt := time.Now().Format(time.RFC3339)
 	// sender transactions
-	var senderTransaction = Transaction{UserID: data.From, Type: 1, Code: "", Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: data.To, LabelValue: "", TxnType: "coin"}
+	var senderTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: utils.WalletCoinSymbol, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: data.To, LabelValue: "", TxnType: utils.CoinTxnType}
 	err = c.State().Put(txID, senderTransaction)
 	if err != nil {
 		return nil, err
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserID: receiver.UserAddresses[0].UserID, Type: 2, Code: "", Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: data.To, LabelValue: "", TxnType: "coin"}
+	var receiveTransaction = Transaction{UserID: receiver.UserAddresses[0].UserID, Type: utils.Receive, Code: utils.WalletCoinSymbol, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: data.To, LabelValue: "", TxnType: utils.CoinTxnType}
 	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
 	if err != nil {
 		return nil, err

@@ -28,7 +28,8 @@ type Asset struct {
 
 // Define the CheckAssetStruct structure
 type CheckAssetStruct struct {
-	Code string `json:"code"`
+	Code  string `json:"code"`
+	Label string `json:"label"`
 }
 
 // Define the transactions structure
@@ -37,6 +38,7 @@ type Transaction struct {
 	TxnType      string `json:"txn_type"`
 	Type         int32  `json:"type"`
 	Code         string `json:"code"`
+	AssetLabel   string `json:"asset_label"`
 	Quantity     int64  `json:"quantity"`
 	AddressValue string `json:"address_value"`
 	LabelValue   string `json:"label_value"`
@@ -82,6 +84,7 @@ type TransactionResponse struct {
 	TxnType      string `json:"txn_type"`
 	Type         int32  `json:"type"`
 	Code         string `json:"code"`
+	AssetLabel   string `json:"asset_label"`
 	Quantity     int64  `json:"quantity"`
 	AddressValue string `json:"address_value"`
 	LabelValue   string `json:"label_value"`

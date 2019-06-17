@@ -37,6 +37,13 @@ const (
 	DocTypeUser        string = "users"        // For users
 	DocTypeAsset       string = "assets"       // For assets
 	DocTypeTransaction string = "transactions" // For transactions
+	WalletCoinSymbol   string = "ABTC"         // Symbol for Wallet Coins
+	AssetTxnType       string = "asset"        // To define asset related transactions
+	CoinTxnType        string = "coin"         // To define coin related transactions
+	Send               int32  = 1              // Flag to define send transaction
+	Receive            int32  = 2              // Flag to define receive transaction
+	AddAssetFee        int64  = 880            // Defined fee to add asset
+	TransferAssetFee   int64  = 3              // Defined fee to transfer asset
 )
 
 // Get Finds the record by ID
