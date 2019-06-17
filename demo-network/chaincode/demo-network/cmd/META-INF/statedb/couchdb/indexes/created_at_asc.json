@@ -1,0 +1,12 @@
+{
+    "index": {
+        "fields": [
+            {
+                "created_at": "desc"
+            }
+        ]
+    },
+    "ddoc": "createdatdesc",
+    "name": "createdatdesc",
+    "type": "json"
+}

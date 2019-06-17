@@ -214,7 +214,7 @@ func GetAssets(c router.Context) (interface{}, error) {
 	}
 	defer resultsIterator.Close()
 
-	queryTransactionsString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"doc_type\":\"%s\"}}", data.ID, utils.DocTypeTransaction)
+	queryTransactionsString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"doc_type\":\"%s\"},\"sort\":[{\"created_at\":\"desc\"}]}", data.ID, utils.DocTypeTransaction)
 	resultsIterator2, err := stub.GetQueryResult(queryTransactionsString)
 	if err != nil {
 		fmt.Println(err)
@@ -457,7 +457,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserID: receiverID, Type: utils.Receive, Code: data.Code, AssetLabel: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: utils.AssetTxnType}
+	var receiveTransaction = Transaction{UserID: receiverID, Type: utils.Receive, Code: data.Code, AssetLabel: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: sender.Address, LabelValue: "Original", TxnType: utils.AssetTxnType}
 	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
 	if err != nil {
 		return nil, err
@@ -570,7 +570,7 @@ func TransferBalance(c router.Context) (interface{}, error) {
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserID: receiver.UserAddresses[0].UserID, Type: utils.Receive, Code: utils.WalletCoinSymbol, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: data.To, LabelValue: "", TxnType: utils.CoinTxnType}
+	var receiveTransaction = Transaction{UserID: receiver.UserAddresses[0].UserID, Type: utils.Receive, Code: utils.WalletCoinSymbol, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: sender.Address, LabelValue: "Original", TxnType: utils.CoinTxnType}
 	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
 	if err != nil {
 		return nil, err
