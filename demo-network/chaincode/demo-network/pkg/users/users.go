@@ -329,7 +329,7 @@ func AddAsset(c router.Context) (interface{}, error) {
 
 	createdAt := time.Now().Format(time.RFC3339)
 	// add asset transaction
-	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: data.Label, Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", TxnType: utils.CoinTxnType}
+	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: data.Label, Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", TxnType: utils.AssetCreatedTxn}
 	err = c.State().Put(txID+strconv.Itoa(1), addAssetTransaction)
 	if err != nil {
 		return nil, err
@@ -498,7 +498,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	sender.WalletBalance = sender.WalletBalance - utils.TransferAssetFee
 
 	// Transfer asset transaction
-	var transferAssetTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: senderAsset.Label, Quantity: utils.TransferAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: utils.CoinTxnType}
+	var transferAssetTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: senderAsset.Label, Quantity: utils.TransferAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: utils.AssetTransferredTxn}
 	err = c.State().Put(txID+strconv.Itoa(4), transferAssetTransaction)
 	if err != nil {
 		return nil, err
