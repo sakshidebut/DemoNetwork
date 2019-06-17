@@ -353,6 +353,13 @@ func CheckAsset(c router.Context) (interface{}, error) {
 		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("Symbol %s already exists!", data.Code))
 	}
 
+	// check already exists
+	queryString1 := fmt.Sprintf("{\"selector\":{\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.Code, utils.DocTypeAsset)
+	asset1, _, err := utils.Get(c, queryString1, "")
+	if asset1 != nil {
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("Symbol %s already exists!", data.Code))
+	}
+
 	responseBody := utils.ResponseMessage{Message: "Symbol Available!"}
 
 	// return the response
