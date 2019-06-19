@@ -41,7 +41,6 @@ func GetUser(c router.Context) (interface{}, error) {
 
 	//If address not found
 	if address == nil {
-		// return nil, err
 		// get the stub to use it for query and save
 		stub := c.Stub()
 
@@ -561,17 +560,60 @@ func TransferBalance(c router.Context) (interface{}, error) {
 
 	stub := c.Stub()
 	txID := stub.GetTxID()
+
+	var receiverLabel, senderLabel string
+	// check label of receiver in sender's address book
+	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
+	receiverLabelData, _, err6 := utils.Get(c, receiverLabelString, fmt.Sprintf("Label of receiver does not exist!"))
+
+	//If label does not exist in address book then save it into db
+	if receiverLabelData == nil {
+
+		labelTxn := AddressBook{UserID: data.From, Address: data.To, Label: data.Label, DocType: utils.DocTypeAddressBook}
+		receiverLabel = data.Label
+		// Save the data
+		err = c.State().Put(txID, labelTxn)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+
+		addressLabel := AddressBook{}
+		err = json.Unmarshal(receiverLabelData, &addressLabel)
+		if err != nil {
+			return nil, status.ErrInternal.WithError(err)
+		}
+		receiverLabel = addressLabel.Label
+	}
+
+	// check label of sender in receiver's address book
+	senderLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"doc_type\":\"%s\"}}", receiver.UserAddresses[0].UserID, sender.Address, utils.DocTypeAddressBook)
+	senderLabelData, _, err6 := utils.Get(c, senderLabelString, fmt.Sprintf("Label of sender does not exist!"))
+
+	//If label does not exist in address book
+	if senderLabelData == nil {
+		senderLabel = "N/A"
+	} else {
+
+		addressLabel1 := AddressBook{}
+		err = json.Unmarshal(senderLabelData, &addressLabel1)
+		if err != nil {
+			return nil, status.ErrInternal.WithError(err)
+		}
+		senderLabel = addressLabel1.Label
+	}
+
 	createdAt := time.Now().Format(time.RFC3339)
 	// sender transactions
-	var senderTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: utils.WalletCoinSymbol, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: data.To, LabelValue: "", TxnType: utils.CoinTxnType}
-	err = c.State().Put(txID, senderTransaction)
+	var senderTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: utils.WalletCoinSymbol, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: data.To, LabelValue: "", AddressBookLabel: receiverLabel, TxnType: utils.CoinTxnType}
+	err = c.State().Put(txID+strconv.Itoa(1), senderTransaction)
 	if err != nil {
 		return nil, err
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserID: receiver.UserAddresses[0].UserID, Type: utils.Receive, Code: utils.WalletCoinSymbol, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: sender.Address, LabelValue: "Original", TxnType: utils.CoinTxnType}
-	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
+	var receiveTransaction = Transaction{UserID: receiver.UserAddresses[0].UserID, Type: utils.Receive, Code: utils.WalletCoinSymbol, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: sender.Address, LabelValue: "Original", AddressBookLabel: senderLabel, TxnType: utils.CoinTxnType}
+	err = c.State().Put(txID+strconv.Itoa(2), receiveTransaction)
 	if err != nil {
 		return nil, err
 	}
@@ -593,4 +635,43 @@ func TransferBalance(c router.Context) (interface{}, error) {
 	responseBody := ResponseAddAsset{ID: data.From, Balance: sender.WalletBalance, Symbol: sender.Symbol}
 	// return the response
 	return responseBody, nil
+}
+
+// GetAddressBookLabel to fetch address or label depending upon input
+func GetAddressBookLabel(c router.Context) (interface{}, error) {
+	// get the data from the request and parse it as structure
+	data := c.Param(`data`).(AddressBook)
+
+	// Validate the inputed data
+	err := data.Validate()
+	if err != nil {
+		if _, ok := err.(validation.InternalError); ok {
+			return nil, err
+		}
+		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
+	}
+
+	var queryLabelString string
+	//If label is empty and address is not empty
+	if (data.Label == "" && data.Address != "") || (data.Label != "" && data.Address != "") {
+		// check label in address book corresponding to address
+		queryLabelString = fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.UserID, data.Address, utils.DocTypeAddressBook)
+	} else {
+		// check address in address book corresponding to label
+		queryLabelString = fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.UserID, data.Label, utils.DocTypeAddressBook)
+	}
+
+	LabelData, _, err := utils.Get(c, queryLabelString, fmt.Sprintf("Record does not exist in your address book."))
+
+	if LabelData == nil {
+		return nil, status.ErrInternal.WithMessage(fmt.Sprintf("Label does not exist for this address."))
+	}
+
+	addressLabel := AddressBook{}
+	err = json.Unmarshal(LabelData, &addressLabel)
+	if err != nil {
+		return nil, status.ErrInternal.WithError(err)
+	}
+	// return the response
+	return addressLabel, nil
 }

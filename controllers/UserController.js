@@ -76,6 +76,12 @@ class UserController {
         let response = await FabricController.invoke(data.user, config.channel, config.chaincode, 'sendBalance', data);
         return response;
     }
+
+    async checkAddressLabel(data) {
+        // Invoke the chaincode function
+        let response = await FabricController.invoke(data.user, config.channel, config.chaincode, 'getLabel', data);
+        return response;
+    }
 }
 
 module.exports = UserController;

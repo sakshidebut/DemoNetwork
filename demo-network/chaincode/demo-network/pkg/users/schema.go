@@ -34,16 +34,17 @@ type CheckAssetStruct struct {
 
 // Define the transactions structure
 type Transaction struct {
-	UserID       string `json:"user_id"`
-	TxnType      string `json:"txn_type"`
-	Type         int32  `json:"type"`
-	Code         string `json:"code"`
-	AssetLabel   string `json:"asset_label"`
-	Quantity     int64  `json:"quantity"`
-	AddressValue string `json:"address_value"`
-	LabelValue   string `json:"label_value"`
-	DocType      string `json:"doc_type"`
-	CreatedAt    string `json:"created_at"`
+	UserID           string `json:"user_id"`
+	TxnType          string `json:"txn_type"`
+	Type             int32  `json:"type"`
+	Code             string `json:"code"`
+	AssetLabel       string `json:"asset_label"`
+	Quantity         int64  `json:"quantity"`
+	AddressValue     string `json:"address_value"`
+	LabelValue       string `json:"label_value"`
+	AddressBookLabel string `json:"address_book_label"`
+	DocType          string `json:"doc_type"`
+	CreatedAt        string `json:"created_at"`
 }
 
 // Define the user structure, with 6 properties.  Structure tags are used by encoding/json library
@@ -97,4 +98,13 @@ type SendBalance struct {
 	From     string `json:"from_id"`
 	To       string `json:"to_id"`
 	Quantity int64  `json:"quantity"`
+	Label    string `json:"label"`
+}
+
+// Define the AddressBook structure
+type AddressBook struct {
+	UserID  string `json:"user_id"`
+	Address string `json:"address"`
+	Label   string `json:"label"`
+	DocType string `json:"doc_type"`
 }

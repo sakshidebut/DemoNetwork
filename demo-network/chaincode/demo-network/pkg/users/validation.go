@@ -62,5 +62,15 @@ func (data SendBalance) Validate() error {
 		validation.Field(&data.From, validation.Required.Error(utils.IDRequired), validation.NotNil.Error(utils.IDRequired)),
 		validation.Field(&data.To, validation.Required.Error(utils.IDRequired), validation.NotNil.Error(utils.IDRequired)),
 		validation.Field(&data.Quantity, validation.Required.Error(utils.QuantityRequired), validation.NotNil.Error(utils.QuantityRequired)),
+		validation.Field(&data.Label, validation.Required.Error(utils.LabelRequired), validation.NotNil.Error(utils.LabelRequired)),
+	)
+}
+
+// Validate Validates the AddressBook Structure
+func (data AddressBook) Validate() error {
+	return validation.ValidateStruct(&data,
+		validation.Field(&data.UserID, validation.Required.Error(utils.UserIDRequired), validation.NotNil.Error(utils.UserIDRequired)),
+		validation.Field(&data.Address, validation.NotNil.Error(utils.AddressRequired)),
+		validation.Field(&data.Label, validation.NotNil.Error(utils.LabelRequired)),
 	)
 }

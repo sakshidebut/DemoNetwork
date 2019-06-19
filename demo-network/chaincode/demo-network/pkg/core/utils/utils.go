@@ -37,6 +37,7 @@ const (
 	DocTypeUser         string = "users"             // For users
 	DocTypeAsset        string = "assets"            // For assets
 	DocTypeTransaction  string = "transactions"      // For transactions
+	DocTypeAddressBook  string = "address_book"      // For address_book
 	WalletCoinSymbol    string = "ABTC"              // Symbol for Wallet Coins
 	AssetTxnType        string = "asset"             // To define asset related transactions
 	CoinTxnType         string = "coin"              // To define coin related transactions

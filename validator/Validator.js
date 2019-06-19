@@ -218,6 +218,11 @@ function sendCoins(req, res, next) {
         .notEmpty().withMessage('The quantity field is required.')
         .isNumeric().withMessage('The quantity may only contain digits.');
 
+    // Check label
+    req.checkBody('label')
+        .exists().withMessage('The label field is required.')
+        .notEmpty().withMessage('The label field is required.');
+
     // validation errors
     let error = req.validationErrors();
     if (error) {

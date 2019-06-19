@@ -3,8 +3,8 @@ package utils
 
 // Constants Order Validation Error messages
 const (
-	IDRequired       string = "Id is required."
-	UserIDRequired   string = "USerId is required."
+	IDRequired       string = "ID is required."
+	UserIDRequired   string = "User ID is required."
 	CodeRequired     string = "Please enter code."
 	LabelRequired    string = "Please enter label."
 	QuantityRequired string = "Please enter Quantity."

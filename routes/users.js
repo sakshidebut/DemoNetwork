@@ -98,4 +98,14 @@ router.post('/send-coins', validator.sendCoins, function (req, res, next) {
     });
 });
 
+//check addresslabel
+router.post('/check-addresslabel', function (req, res, next) {
+    user_object.checkAddressLabel(req.body).then(result => {
+        res.status(result.status).json(result.data);
+    }).catch(result => {
+        //error handling
+        res.status(result.status).json(result.data);
+    });
+});
+
 module.exports = router;
