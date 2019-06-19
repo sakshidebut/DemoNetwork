@@ -53,6 +53,7 @@ func (data GetTransaction) Validate() error {
 		validation.Field(&data.To, validation.Required.Error(utils.IDRequired), validation.NotNil.Error(utils.IDRequired)),
 		validation.Field(&data.Code, validation.Required.Error(utils.CodeRequired), validation.NotNil.Error(utils.CodeRequired)),
 		validation.Field(&data.Quantity, validation.Required.Error(utils.QuantityRequired), validation.NotNil.Error(utils.QuantityRequired)),
+		validation.Field(&data.Label, validation.Required.Error(utils.LabelRequired), validation.NotNil.Error(utils.LabelRequired)),
 	)
 }
 

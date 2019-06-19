@@ -328,7 +328,7 @@ func AddAsset(c router.Context) (interface{}, error) {
 
 	createdAt := time.Now().Format(time.RFC3339)
 	// add asset transaction
-	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: data.Label, Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", TxnType: utils.AssetCreatedTxn}
+	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: data.Label, Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", AddressBookLabel: "", TxnType: utils.AssetCreatedTxn}
 	err = c.State().Put(txID+strconv.Itoa(1), addAssetTransaction)
 	if err != nil {
 		return nil, err
@@ -401,10 +401,10 @@ func TransferAsset(c router.Context) (interface{}, error) {
 		return nil, status.ErrInternal.WithError(err)
 	}
 
-	var receiverLabel string
+	var receiverOwnLabel string
 	for i := range receiver.UserAddresses {
 		if receiver.UserAddresses[i].Value == data.To {
-			receiverLabel = receiver.UserAddresses[i].Label
+			receiverOwnLabel = receiver.UserAddresses[i].Label
 		}
 	}
 
@@ -448,16 +448,59 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	stub := c.Stub()
 	txID := stub.GetTxID()
 	data.CreatedAt = time.Now().Format(time.RFC3339)
+
+	var receiverLabel, senderLabel string
+	// check label of receiver in sender's address book
+	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
+	receiverLabelData, _, err6 := utils.Get(c, receiverLabelString, fmt.Sprintf("Label of receiver does not exist!"))
+
+	//If label does not exist in address book then save it into db
+	if receiverLabelData == nil {
+
+		labelTxn := AddressBook{UserID: data.From, Address: data.To, Label: data.Label, DocType: utils.DocTypeAddressBook}
+		receiverLabel = data.Label
+		// Save the data
+		err = c.State().Put(txID, labelTxn)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+
+		addressLabel := AddressBook{}
+		err = json.Unmarshal(receiverLabelData, &addressLabel)
+		if err != nil {
+			return nil, status.ErrInternal.WithError(err)
+		}
+		receiverLabel = addressLabel.Label
+	}
+
+	// check label of sender in receiver's address book
+	senderLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"doc_type\":\"%s\"}}", receiver.UserAddresses[0].UserID, sender.Address, utils.DocTypeAddressBook)
+	senderLabelData, _, err6 := utils.Get(c, senderLabelString, fmt.Sprintf("Label of sender does not exist!"))
+
+	//If label does not exist in address book
+	if senderLabelData == nil {
+		senderLabel = "N/A"
+	} else {
+
+		addressLabel1 := AddressBook{}
+		err = json.Unmarshal(senderLabelData, &addressLabel1)
+		if err != nil {
+			return nil, status.ErrInternal.WithError(err)
+		}
+		senderLabel = addressLabel1.Label
+	}
+
 	// sender transactions
-	var senderTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: data.Code, AssetLabel: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: utils.AssetTxnType}
-	err = c.State().Put(txID, senderTransaction)
+	var senderTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: data.Code, AssetLabel: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverOwnLabel, AddressBookLabel: receiverLabel, TxnType: utils.AssetTxnType}
+	err = c.State().Put(txID+strconv.Itoa(1), senderTransaction)
 	if err != nil {
 		return nil, err
 	}
 
 	// receiver transactions
-	var receiveTransaction = Transaction{UserID: receiverID, Type: utils.Receive, Code: data.Code, AssetLabel: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: sender.Address, LabelValue: "Original", TxnType: utils.AssetTxnType}
-	err = c.State().Put(txID+strconv.Itoa(1), receiveTransaction)
+	var receiveTransaction = Transaction{UserID: receiverID, Type: utils.Receive, Code: data.Code, AssetLabel: senderAsset.Label, Quantity: data.Quantity, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: sender.Address, LabelValue: "Original", AddressBookLabel: senderLabel, TxnType: utils.AssetTxnType}
+	err = c.State().Put(txID+strconv.Itoa(2), receiveTransaction)
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +540,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 	sender.WalletBalance = sender.WalletBalance - utils.TransferAssetFee
 
 	// Transfer asset transaction
-	var transferAssetTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: senderAsset.Label, Quantity: utils.TransferAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverLabel, TxnType: utils.AssetTransferredTxn}
+	var transferAssetTransaction = Transaction{UserID: data.From, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: senderAsset.Label, Quantity: utils.TransferAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: data.CreatedAt, AddressValue: data.To, LabelValue: receiverOwnLabel, AddressBookLabel: receiverLabel, TxnType: utils.AssetTransferredTxn}
 	err = c.State().Put(txID+strconv.Itoa(4), transferAssetTransaction)
 	if err != nil {
 		return nil, err

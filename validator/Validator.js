@@ -233,4 +233,21 @@ function sendCoins(req, res, next) {
     }
 }
 
-module.exports = { createUser, getUser, allUsers, issueToken, checkSymbol, getToken, transferToken, sendCoins, addAddress };
+// Validate addAddress API
+function checkAddressLabel(req, res, next) {
+    // Check user id
+    req.checkBody('user_id')
+        .exists().withMessage('The user id field is required.')
+        .notEmpty().withMessage('The user id field is required.');
+
+    // validation errors
+    let error = req.validationErrors();
+    if (error) {
+        let message = error[0].msg;
+        res.status(422).json({ message: message, key: error[0].param });
+    } else {
+        next();
+    }
+}
+
+module.exports = { createUser, getUser, allUsers, issueToken, checkSymbol, getToken, transferToken, sendCoins, addAddress, checkAddressLabel };

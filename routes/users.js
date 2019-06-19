@@ -99,7 +99,7 @@ router.post('/send-coins', validator.sendCoins, function (req, res, next) {
 });
 
 //check addresslabel
-router.post('/check-addresslabel', function (req, res, next) {
+router.post('/check-addresslabel', validator.checkAddressLabel, function (req, res, next) {
     user_object.checkAddressLabel(req.body).then(result => {
         res.status(result.status).json(result.data);
     }).catch(result => {
