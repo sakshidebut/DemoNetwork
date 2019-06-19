@@ -328,7 +328,7 @@ func AddAsset(c router.Context) (interface{}, error) {
 
 	createdAt := time.Now().Format(time.RFC3339)
 	// add asset transaction
-	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: data.Label, Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", AddressBookLabel: "N/A", TxnType: utils.AssetCreatedTxn}
+	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: data.Label, Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", AddressBookLabel: "Original", TxnType: utils.AssetCreatedTxn}
 	err = c.State().Put(txID+strconv.Itoa(1), addAssetTransaction)
 	if err != nil {
 		return nil, err
