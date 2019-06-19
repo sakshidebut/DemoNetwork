@@ -328,7 +328,7 @@ func AddAsset(c router.Context) (interface{}, error) {
 
 	createdAt := time.Now().Format(time.RFC3339)
 	// add asset transaction
-	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: data.Label, Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", AddressBookLabel: "", TxnType: utils.AssetCreatedTxn}
+	var addAssetTransaction = Transaction{UserID: data.UserID, Type: utils.Send, Code: utils.WalletCoinSymbol, AssetLabel: data.Label, Quantity: utils.AddAssetFee, DocType: utils.DocTypeTransaction, CreatedAt: createdAt, AddressValue: "", LabelValue: "", AddressBookLabel: "N/A", TxnType: utils.AssetCreatedTxn}
 	err = c.State().Put(txID+strconv.Itoa(1), addAssetTransaction)
 	if err != nil {
 		return nil, err
@@ -451,11 +451,17 @@ func TransferAsset(c router.Context) (interface{}, error) {
 
 	var receiverLabel, senderLabel string
 	// check label of receiver in sender's address book
-	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
+	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
 	receiverLabelData, _, err6 := utils.Get(c, receiverLabelString, fmt.Sprintf("Label of receiver does not exist!"))
 
 	//If label does not exist in address book then save it into db
 	if receiverLabelData == nil {
+		// check if label is unique
+		checkUniqueString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.Label, utils.DocTypeAddressBook)
+		uniqueLabelData, _, err := utils.Get(c, checkUniqueString, fmt.Sprintf("This label already exists!"))
+		if uniqueLabelData != nil {
+			return nil, status.ErrInternal.WithMessage(fmt.Sprintf("This label already exists!"))
+		}
 
 		labelTxn := AddressBook{UserID: data.From, Address: data.To, Label: data.Label, DocType: utils.DocTypeAddressBook}
 		receiverLabel = data.Label
@@ -606,11 +612,17 @@ func TransferBalance(c router.Context) (interface{}, error) {
 
 	var receiverLabel, senderLabel string
 	// check label of receiver in sender's address book
-	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
+	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
 	receiverLabelData, _, err6 := utils.Get(c, receiverLabelString, fmt.Sprintf("Label of receiver does not exist!"))
 
 	//If label does not exist in address book then save it into db
 	if receiverLabelData == nil {
+		// check if label is unique
+		checkUniqueString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.Label, utils.DocTypeAddressBook)
+		uniqueLabelData, _, err := utils.Get(c, checkUniqueString, fmt.Sprintf("This label already exists!"))
+		if uniqueLabelData != nil {
+			return nil, status.ErrInternal.WithMessage(fmt.Sprintf("This label already exists!"))
+		}
 
 		labelTxn := AddressBook{UserID: data.From, Address: data.To, Label: data.Label, DocType: utils.DocTypeAddressBook}
 		receiverLabel = data.Label
