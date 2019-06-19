@@ -451,7 +451,7 @@ func TransferAsset(c router.Context) (interface{}, error) {
 
 	var receiverLabel, senderLabel string
 	// check label of receiver in sender's address book
-	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
+	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
 	receiverLabelData, _, err6 := utils.Get(c, receiverLabelString, fmt.Sprintf("Label of receiver does not exist!"))
 
 	//If label does not exist in address book then save it into db
@@ -612,7 +612,7 @@ func TransferBalance(c router.Context) (interface{}, error) {
 
 	var receiverLabel, senderLabel string
 	// check label of receiver in sender's address book
-	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
+	receiverLabelString := fmt.Sprintf("{\"selector\":{\"user_id\":\"%s\",\"address\":\"%s\",\"label\":\"%s\",\"doc_type\":\"%s\"}}", data.From, data.To, data.Label, utils.DocTypeAddressBook)
 	receiverLabelData, _, err6 := utils.Get(c, receiverLabelString, fmt.Sprintf("Label of receiver does not exist!"))
 
 	//If label does not exist in address book then save it into db
