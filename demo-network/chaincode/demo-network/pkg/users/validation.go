@@ -75,3 +75,10 @@ func (data AddressBook) Validate() error {
 		validation.Field(&data.Label, validation.NotNil.Error(utils.LabelRequired)),
 	)
 }
+
+// Validate Validates the UserSecret Structure
+func (data UserSecret) Validate() error {
+	return validation.ValidateStruct(&data,
+		validation.Field(&data.Secret, validation.Required.Error(utils.SecretRequired), validation.NotNil.Error(utils.SecretRequired)),
+	)
+}

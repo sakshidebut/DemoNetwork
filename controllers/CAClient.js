@@ -61,7 +61,7 @@ class CAClient {
     /**
      * Register & enroll user with CA
      */
-    async enrollUser(username) {
+    async enrollUser(username, secret) {
         try {
             console.log(username);
             console.log(`Wallet path: ${walletPath}`);
@@ -93,12 +93,13 @@ class CAClient {
             const adminIdentity = gateway.getCurrentIdentity();
 
             // Register the user, enroll the user, and import the new identity into the wallet.
-            const secret = await ca.register({ affiliation: 'org1.department1', enrollmentID: username, role: 'client' }, adminIdentity);
+            await ca.register({ affiliation: 'org1.department1', enrollmentID: username, enrollmentSecret: secret, role: 'client' }, adminIdentity);
             const enrollment = await ca.enroll({ enrollmentID: username, enrollmentSecret: secret });
             const userIdentity = X509WalletMixin.createIdentity('Org1MSP', enrollment.certificate, enrollment.key.toBytes());
             await wallet.import(username, userIdentity);
             return {
                 status: 200,
+                secret: secret,
                 data: 'Successfully registered and enrolled admin user "' + username + '" and imported it into the wallet'
             };
 

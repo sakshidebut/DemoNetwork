@@ -15,6 +15,8 @@ type User struct {
 	DocType       string    `json:"doc_type"`
 	CreatedAt     string    `json:"created_at"`
 	UserAddresses []Address `json:"user_addresses"`
+	Identity      string    `json:"identity"`
+	Secret        string    `json:"secret"`
 }
 
 // Define the asset structure
@@ -55,11 +57,18 @@ type UserResponse struct {
 	Symbol        string    `json:"symbol"`
 	CreatedAt     string    `json:"created_at"`
 	UserAddresses []Address `json:"user_addresses"`
+	Identity      string    `json:"identity"`
+	Secret        string    `json:"secret"`
 }
 
 // Define the UserId structure
 type UserId struct {
 	ID string `json:"id"`
+}
+
+// Define the UserSecret structure
+type UserSecret struct {
+	Secret string `json:"secret"`
 }
 
 // Define the GetTransactions structure

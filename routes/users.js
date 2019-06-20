@@ -18,6 +18,16 @@ router.get('/enroll-admin', function (req, res, next) {
     });
 });
 
+//create user details
+router.post('/create-user', validator.createUser, function (req, res, next) {
+    user_object.createUser(req.body).then(result => {
+        res.status(result.status).json(result.data);
+    }).catch(result => {
+        //error handling
+        res.status(result.status).json(result.data);
+    });
+});
+
 //get user details
 router.post('/get-user', validator.getUser, function (req, res, next) {
     user_object.getUser(req.body).then(result => {

@@ -1,33 +1,11 @@
 'use strict';
 
-// Validate User data
+// Validate createUser API
 function createUser(req, res, next) {
-    // Check name
-    req.checkBody('name')
-        .exists().withMessage('The name field is required.')
-        .notEmpty().withMessage('The name field is required.')
-        .isString().withMessage('The name must be a string.');
-
-    // Check email
-    req.checkBody('email')
-        .exists().withMessage('The email field is required.')
-        .notEmpty().withMessage('The email field is required.')
-        .isEmail().withMessage('Please enter a valid email address.')
-        .isString().withMessage('The email must be a string.');
-
-    // Check phone
-    req.checkBody('phone')
-        .exists().withMessage('The phone field is required.')
-        .notEmpty().withMessage('The phone field is required.')
-        .isNumeric().withMessage('The phone may only contain digits.')
-        .isLength({ min: 10 }).withMessage('The phone must be 10 digits.');
-
     // Check address
     req.checkBody('address')
         .exists().withMessage('The address field is required.')
-        .notEmpty().withMessage('The address field is required.')
-        .isLength({ min: 5, max: 500 }).withMessage('The address must be between 5 and 500 characters.');
-
+        .notEmpty().withMessage('The address field is required.');
 
     // validation errors
     let error = req.validationErrors();
@@ -42,9 +20,9 @@ function createUser(req, res, next) {
 // Validate getUser API
 function getUser(req, res, next) {
     // Check address
-    req.checkBody('address')
-        .exists().withMessage('The address field is required.')
-        .notEmpty().withMessage('The address field is required.');
+    req.checkBody('secret')
+        .exists().withMessage('The secret field is required.')
+        .notEmpty().withMessage('The secret field is required.');
 
     // validation errors
     let error = req.validationErrors();

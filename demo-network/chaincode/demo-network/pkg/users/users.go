@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chaincode/demo-network/pkg/core/status"
@@ -15,8 +16,8 @@ import (
 	"github.com/s7techlab/cckit/router"
 )
 
-// GetUser create the user
-func GetUser(c router.Context) (interface{}, error) {
+// CreateUser create the user
+func CreateUser(c router.Context) (interface{}, error) {
 	// get the data from the request and parse it as structure
 	data := c.Param(`data`).(User)
 
@@ -50,7 +51,7 @@ func GetUser(c router.Context) (interface{}, error) {
 		data.UserAddresses = addresses
 
 		// prepare the response body
-		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, Symbol: data.Symbol, CreatedAt: data.CreatedAt, UserAddresses: addresses}
+		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, Symbol: data.Symbol, CreatedAt: data.CreatedAt, UserAddresses: addresses, Identity: data.Identity, Secret: data.Secret + "-#" + data.Identity}
 
 		// Save the data and return the response
 		return responseBody, c.State().Put(stub.GetTxID(), data)
@@ -58,6 +59,45 @@ func GetUser(c router.Context) (interface{}, error) {
 
 	userData := UserResponse{}
 	err = json.Unmarshal(address, &userData)
+	if err != nil {
+		return nil, status.ErrInternal.WithError(err)
+	}
+	userData.ID = userID
+	userData.Secret = userData.Secret + "-#" + userData.Identity
+
+	userBytes, _ := json.Marshal(userData)
+
+	//return the response
+	return userBytes, nil
+}
+
+// GetUser fetch the details of user
+func GetUser(c router.Context) (interface{}, error) {
+	// get the data from the request and parse it as structure
+	data := c.Param(`data`).(UserSecret)
+
+	// Validate the inputed data
+	err := data.Validate()
+	if err != nil {
+		if _, ok := err.(validation.InternalError); ok {
+			return nil, err
+		}
+		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
+	}
+
+	s := strings.Split(data.Secret, "-#")
+	secret, _ := s[0], s[1]
+
+	// check if user already exists or not
+	queryString := fmt.Sprintf("{\"selector\":{\"secret\":\"%s\",\"doc_type\":\"%s\"}}", secret, utils.DocTypeUser)
+	userResult, userID, err := utils.Get(c, queryString, fmt.Sprintf("User found!"))
+
+	if userResult == nil {
+		return nil, status.ErrBadRequest.WithMessage(fmt.Sprintf("User does not exist in this system!"))
+	}
+
+	userData := UserResponse{}
+	err = json.Unmarshal(userResult, &userData)
 	if err != nil {
 		return nil, status.ErrInternal.WithError(err)
 	}
@@ -111,7 +151,7 @@ func AddAddress(c router.Context) (interface{}, error) {
 
 	user.UserAddresses = append(user.UserAddresses, address1)
 	// prepare the response body
-	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, Symbol: user.Symbol, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses}
+	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, Symbol: user.Symbol, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses, Identity: user.Identity}
 	// Save the data and return the response
 	return responseBody, c.State().Put(data.UserID, user)
 }

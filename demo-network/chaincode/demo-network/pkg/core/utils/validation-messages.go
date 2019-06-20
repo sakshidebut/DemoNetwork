@@ -12,4 +12,5 @@ const (
 	EmailRequired    string = "Please enter email."
 	PhoneRequired    string = "Please enter phone."
 	AddressRequired  string = "Please enter Address."
+	SecretRequired   string = "Secret key is required."
 )

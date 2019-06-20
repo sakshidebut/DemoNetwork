@@ -8,12 +8,18 @@ const CAClientController = new CAClient();
 
 class UserController {
 
-    async getUser(data) {
+    async createUser(data) {
         try {
-            let result = await CAClientController.enrollUser(data.user);
+            const secret = this.makeid(12);
+            let result = await CAClientController.enrollUser(data.user, secret);
             if (result.status = 200) {
+                data.secret = result.secret;
+                data.identity = data.user;
+
+                console.log(data);
+
                 // Invoke the chaincode function
-                let response = await FabricController.invoke(data.user, config.channel, config.chaincode, 'getUser', data);
+                let response = await FabricController.invoke(data.user, config.channel, config.chaincode, 'createUser', data);
                 return response;
             }
             else {
@@ -33,6 +39,16 @@ class UserController {
                 }
             };
         }
+    }
+
+    async getUser(data) {
+        const str = data.secret;
+        const split_str = str.split('-#');
+        console.log(split_str);
+        console.log(split_str[1]);
+        // Invoke the chaincode function
+        let response = await FabricController.invoke(split_str[1], config.channel, config.chaincode, 'getUser', data);
+        return response;
     }
 
     async addAddress(data) {
@@ -81,6 +97,16 @@ class UserController {
         // Invoke the chaincode function
         let response = await FabricController.invoke(data.user, config.channel, config.chaincode, 'getLabel', data);
         return response;
+    }
+
+    makeid(length) {
+        var result = '';
+        var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for (var i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
     }
 }
 
