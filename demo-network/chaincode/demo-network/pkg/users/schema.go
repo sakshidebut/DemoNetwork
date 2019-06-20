@@ -50,7 +50,7 @@ type Transaction struct {
 }
 
 // Define the user structure, with 6 properties.  Structure tags are used by encoding/json library
-type UserResponse struct {
+type NewUserResponse struct {
 	ID            string    `json:"_id"`
 	Address       string    `json:"address"`
 	WalletBalance int64     `json:"wallet_balance"`
@@ -59,6 +59,16 @@ type UserResponse struct {
 	UserAddresses []Address `json:"user_addresses"`
 	Identity      string    `json:"identity"`
 	Secret        string    `json:"secret"`
+}
+
+// Define the user structure, with 6 properties.  Structure tags are used by encoding/json library
+type UserResponse struct {
+	ID            string    `json:"_id"`
+	Address       string    `json:"address"`
+	WalletBalance int64     `json:"wallet_balance"`
+	Symbol        string    `json:"symbol"`
+	CreatedAt     string    `json:"created_at"`
+	UserAddresses []Address `json:"user_addresses"`
 }
 
 // Define the UserId structure

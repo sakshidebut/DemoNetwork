@@ -51,7 +51,7 @@ func CreateUser(c router.Context) (interface{}, error) {
 		data.UserAddresses = addresses
 
 		// prepare the response body
-		responseBody := UserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, Symbol: data.Symbol, CreatedAt: data.CreatedAt, UserAddresses: addresses, Identity: data.Identity, Secret: data.Secret + "-#" + data.Identity}
+		responseBody := NewUserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, Symbol: data.Symbol, CreatedAt: data.CreatedAt, UserAddresses: addresses, Identity: data.Identity, Secret: data.Secret + "-#" + data.Identity}
 
 		// Save the data and return the response
 		return responseBody, c.State().Put(stub.GetTxID(), data)
@@ -63,7 +63,6 @@ func CreateUser(c router.Context) (interface{}, error) {
 		return nil, status.ErrInternal.WithError(err)
 	}
 	userData.ID = userID
-	userData.Secret = userData.Secret + "-#" + userData.Identity
 
 	userBytes, _ := json.Marshal(userData)
 
@@ -151,7 +150,7 @@ func AddAddress(c router.Context) (interface{}, error) {
 
 	user.UserAddresses = append(user.UserAddresses, address1)
 	// prepare the response body
-	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, Symbol: user.Symbol, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses, Identity: user.Identity}
+	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, Symbol: user.Symbol, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses}
 	// Save the data and return the response
 	return responseBody, c.State().Put(data.UserID, user)
 }
