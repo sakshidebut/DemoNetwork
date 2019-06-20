@@ -150,7 +150,7 @@ func AddAddress(c router.Context) (interface{}, error) {
 
 	user.UserAddresses = append(user.UserAddresses, address1)
 	// prepare the response body
-	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, Symbol: user.Symbol, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses}
+	responseBody := UserResponse{ID: data.UserID, Address: user.Address, WalletBalance: user.WalletBalance, Symbol: user.Symbol, CreatedAt: user.CreatedAt, UserAddresses: user.UserAddresses, Identity: user.Identity}
 	// Save the data and return the response
 	return responseBody, c.State().Put(data.UserID, user)
 }

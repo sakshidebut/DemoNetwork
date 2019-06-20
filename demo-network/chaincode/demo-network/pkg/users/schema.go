@@ -69,6 +69,7 @@ type UserResponse struct {
 	Symbol        string    `json:"symbol"`
 	CreatedAt     string    `json:"created_at"`
 	UserAddresses []Address `json:"user_addresses"`
+	Identity      string    `json:"identity"`
 }
 
 // Define the UserId structure

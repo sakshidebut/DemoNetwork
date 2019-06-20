@@ -15,9 +15,6 @@ class UserController {
             if (result.status = 200) {
                 data.secret = result.secret;
                 data.identity = data.user;
-
-                console.log(data);
-
                 // Invoke the chaincode function
                 let response = await FabricController.invoke(data.user, config.channel, config.chaincode, 'createUser', data);
                 return response;
@@ -44,8 +41,6 @@ class UserController {
     async getUser(data) {
         const str = data.secret;
         const split_str = str.split('-#');
-        console.log(split_str);
-        console.log(split_str[1]);
         // Invoke the chaincode function
         let response = await FabricController.invoke(split_str[1], config.channel, config.chaincode, 'getUser', data);
         return response;
