@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/chaincode/demo-network/pkg/core/status"
@@ -51,7 +50,7 @@ func CreateUser(c router.Context) (interface{}, error) {
 		data.UserAddresses = addresses
 
 		// prepare the response body
-		responseBody := NewUserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, Symbol: data.Symbol, CreatedAt: data.CreatedAt, UserAddresses: addresses, Identity: data.Identity, Secret: data.Secret + "-#" + data.Identity}
+		responseBody := NewUserResponse{ID: stub.GetTxID(), Address: data.Address, WalletBalance: data.WalletBalance, Symbol: data.Symbol, CreatedAt: data.CreatedAt, UserAddresses: addresses, Identity: data.Identity, Secret: data.Secret + data.Identity}
 
 		// Save the data and return the response
 		return responseBody, c.State().Put(stub.GetTxID(), data)
@@ -84,8 +83,7 @@ func GetUser(c router.Context) (interface{}, error) {
 		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
 	}
 
-	s := strings.Split(data.Secret, "-#")
-	secret, _ := s[0], s[1]
+	secret := data.Secret[0:12]
 
 	// check if user already exists or not
 	queryString := fmt.Sprintf("{\"selector\":{\"secret\":\"%s\",\"doc_type\":\"%s\"}}", secret, utils.DocTypeUser)

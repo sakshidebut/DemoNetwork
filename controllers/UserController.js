@@ -40,9 +40,9 @@ class UserController {
 
     async getUser(data) {
         const str = data.secret;
-        const split_str = str.split('-#');
+        const identity = str.substring(12);
         // Invoke the chaincode function
-        let response = await FabricController.invoke(split_str[1], config.channel, config.chaincode, 'getUser', data);
+        let response = await FabricController.invoke(identity, config.channel, config.chaincode, 'getUser', data);
         return response;
     }
 
