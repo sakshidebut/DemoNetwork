@@ -10,7 +10,7 @@ class UserController {
 
     async createUser(data) {
         try {
-            const secret = this.makeid(12);
+            const secret = this.makeid(300);
             let result = await CAClientController.enrollUser(data.user, secret);
             if (result.status = 200) {
                 data.secret = result.secret;
@@ -40,7 +40,7 @@ class UserController {
 
     async getUser(data) {
         const str = data.secret;
-        const identity = str.substring(12);
+        const identity = str.substring(300);
         // Invoke the chaincode function
         let response = await FabricController.invoke(identity, config.channel, config.chaincode, 'getUser', data);
         return response;

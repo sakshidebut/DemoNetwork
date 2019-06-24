@@ -83,7 +83,7 @@ func GetUser(c router.Context) (interface{}, error) {
 		return nil, status.ErrStatusUnprocessableEntity.WithValidationError(err.(validation.Errors))
 	}
 
-	secret := data.Secret[0:12]
+	secret := data.Secret[0:300]
 
 	// check if user already exists or not
 	queryString := fmt.Sprintf("{\"selector\":{\"secret\":\"%s\",\"doc_type\":\"%s\"}}", secret, utils.DocTypeUser)

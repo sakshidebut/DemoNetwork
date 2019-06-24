@@ -16,3 +16,6 @@ docker rmi -f $(docker images | awk '($1 ~ /dev-peer.*.walletdemo.*/) {print $3}
 
 #Remove channel artifacts
 #rm -rf channel-artifacts/*
+
+#Delete Wallet
+rm -rf ./../wallet
